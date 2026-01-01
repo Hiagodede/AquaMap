@@ -6,6 +6,7 @@ namespace AquaMap
     {
         public static MauiApp CreateMauiApp()
         {
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -18,6 +19,7 @@ namespace AquaMap
 #if DEBUG
     		builder.Logging.AddDebug();
 #endif
+
 
             return builder.Build();
         }
