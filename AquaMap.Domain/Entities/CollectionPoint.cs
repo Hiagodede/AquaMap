@@ -13,7 +13,13 @@ namespace AquaMap.Domain.Entities
         public string Description { get; private set; }
 
         // Relationships: One point has many analyses
-        public ICollection<LabAnalysis> AnalysisHistory { get; private set; } 
+        public ICollection<LabAnalysis> AnalysisHistory { get; private set; }
+
+        // --- NOVO ---
+#pragma warning disable CS8618
+        protected CollectionPoint() { }
+#pragma warning restore CS8618
+        // ------------
 
         public CollectionPoint(string name , double latitude, double longitude, string description)
         {

@@ -1,54 +1,25 @@
-﻿using System;
-using System.Windows.Input;
-using AquaMap.ViewModels;
+﻿using AquaMap.ViewModels;
 
-namespace AquaMap.Views;
-
-public partial class MainPage : ContentPage
+namespace AquaMap
 {
-    // Construtor sem parâmetros necessário para o XAML/DataTemplate do Shell
-    public MainPage() : this(new MainViewModel())
+    public partial class MainPage : ContentPage
     {
-    }
+        private readonly MainViewModel _viewModel;
 
-    // O construtor que recebe a ViewModel
-    public MainPage(MainViewModel viewModel)
-    {
-        InitializeComponent();
-        BindingContext = viewModel;
-    }
-
-    // Manipulador para o evento Clicked definido no XAML.
-    private void OnCounterClicked(object? sender, EventArgs e)
-    {
-        if (BindingContext is not null)
+        public MainPage(MainViewModel viewModel)
         {
-            var incrementProp = BindingContext.GetType().GetProperty("IncrementCommand");
-            if (incrementProp?.GetValue(BindingContext) is ICommand cmd && cmd.CanExecute(null))
-            {
-                cmd.Execute(null);
-                return;
-            }
-
-            var counterProp = BindingContext.GetType().GetProperty("Counter");
-            if (counterProp is not null && counterProp.PropertyType == typeof(int) && counterProp.CanWrite)
-            {
-                var current = (int?)counterProp.GetValue(BindingContext) ?? 0;
-                counterProp.SetValue(BindingContext, current + 1);
-                return;
-            }
+            InitializeComponent();
+            _viewModel = viewModel;
+            BindingContext = _viewModel;
         }
 
-        if (sender is Button btn)
+        protected override void OnAppearing()
         {
-            if (int.TryParse(btn.Text, out var value))
-            {
-                btn.Text = (value + 1).ToString();
-            }
-            else
-            {
-                btn.Text = "1";
-            }
+            base.OnAppearing();
+
+            // O '?' resolve o aviso de nulidade.
+            // Ele faz o mesmo que o seu 'if', mas em uma linha só.
+            _viewModel.LoadPointsCommand?.Execute(null);
         }
     }
 }

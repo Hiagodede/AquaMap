@@ -15,6 +15,13 @@ namespace AquaMap.Domain.Entities
         public UserType Role { get; private set; }
 
         // Atualize o construtor para receber TODOS os campos obrigatórios
+
+        // --- NOVO ---
+        #pragma warning disable CS8618 // O campo não anulável precisa conter um valor não nulo ao sair do construtor.
+        protected User() { }
+        #pragma warning restore CS8618
+        // ------------
+
         public User(string fullName, string taxId, DateTime birthDate, string address, string phoneNumber, string email, string passwordHash, UserType role)
         {
             Id = Guid.NewGuid();

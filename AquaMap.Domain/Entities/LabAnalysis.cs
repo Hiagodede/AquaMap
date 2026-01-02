@@ -18,6 +18,12 @@ namespace AquaMap.Domain.Entities
 
         public PotabilityStatus Status { get; private set; }
 
+        // --- NOVO: CONSTRUTOR VAZIO PARA O EF CORE ---
+#pragma warning disable CS8618
+        protected LabAnalysis() { }
+#pragma warning restore CS8618
+        // ---------------------------------------------
+
         public LabAnalysis(Guid collectionPointId, double ph, double turbidity, double totalColiforms, bool hasMetals)
         {
             Id = Guid.NewGuid();
