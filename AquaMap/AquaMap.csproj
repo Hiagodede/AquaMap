@@ -64,4 +64,9 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\AquaMap.Domain\AquaMap.Domain.csproj" />
+	  <ProjectReference Include="..\AquaMap.Infrastructure\AquaMap.Infrastructure.csproj" />
+	</ItemGroup>
+
 </Project>

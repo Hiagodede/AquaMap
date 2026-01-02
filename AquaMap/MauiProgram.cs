@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AquaMap.Infrastructure.Data; // NOVO: Para achar o AppDbContext
+using Microsoft.EntityFrameworkCore; // NOVO: Para o EF Core
+using Microsoft.Extensions.Logging;
 
 namespace AquaMap
 {
@@ -6,7 +8,6 @@ namespace AquaMap
     {
         public static MauiApp CreateMauiApp()
         {
-
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -17,9 +18,14 @@ namespace AquaMap
                 });
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
+            // --- NOVO: CONFIGURAÇÃO DO BANCO DE DADOS ---
+            // Aqui dizemos: "Use o SQLite e salve o arquivo neste caminho"
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite($"Filename={Constants.DatabasePath}"));
+            // --------------------------------------------
 
             return builder.Build();
         }
