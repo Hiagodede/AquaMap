@@ -1,3 +1,5 @@
+using System.Security.Principal;
+
 namespace AquaMap;
 
 public partial class App : Application
@@ -9,7 +11,7 @@ public partial class App : Application
         MainPage = shell;
     }
 
-    // Mantém override para compatibilidade com platforms que chamam CreateWindow
+    // Mantï¿½m override para compatibilidade com platforms que chamam CreateWindow
     protected override Window CreateWindow(IActivationState? activationState)
     {
         return new Window(MainPage);

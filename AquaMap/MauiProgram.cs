@@ -1,9 +1,6 @@
-﻿using AquaMap.Domain.Interfaces;         
-using AquaMap.Infrastructure.Data; 
-using AquaMap.Infrastructure.Repositories;
-using AquaMap.Infrastructure.Services;   
+using AquaMap.Services;   
 using AquaMap.ViewModels;  
-using Microsoft.EntityFrameworkCore; 
+using AquaMap.Views;  
 using Microsoft.Extensions.Logging;
 
 namespace AquaMap
@@ -25,41 +22,16 @@ namespace AquaMap
             builder.Logging.AddDebug();
 #endif
 
+            // --- NOVO: REGISTRAR SERVIÇOS DE API ---
+            builder.Services.AddSingleton(new ApiService(new System.Net.Http.HttpClient()));
 
-            // Configuração do Banco (Você já fez)
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite($"Filename={Constants.DatabasePath}"));
-
-            // --- NOVO: REGISTRAR O SEEDER ---
-            builder.Services.AddTransient<ISeedDataService, SeedDataService>();
-
-            // --- NOVO: REGISTRAR O REPOSITÓRIO ---
-            builder.Services.AddScoped<ICollectionPointRepository, CollectionPointRepository>();
-            // -------------------------------------
-
-            // --- NOVO: REGISTRAR TELA E VIEWMODEL ---
+            // --- REGISTRAR TELAS E VIEWMODELS ---
             builder.Services.AddTransient<MainViewModel>();
             builder.Services.AddTransient<MainPage>();
+            builder.Services.AddTransient<MapViewModel>();
+            builder.Services.AddTransient<MapPage>();
 
-            var app = builder.Build();
-
-            // --- NOVO: EXECUTAR O SEEDER ---
-            // Isso cria um escopo temporário para rodar o serviço de banco
-            SeedData(app);
-
-            return app;
-        }
-
-        // Método auxiliar para rodar o Seed
-        private static void SeedData(MauiApp app)
-        {
-            var scopedFactory = app.Services.GetService<IServiceScopeFactory>();
-            using (var scope = scopedFactory.CreateScope())
-            {
-                var service = scope.ServiceProvider.GetService<ISeedDataService>();
-                // O .Wait() é usado aqui porque estamos num contexto síncrono de inicialização
-                service.InitializeAsync().Wait();
-            }
+            return builder.Build();
         }
     }
 }

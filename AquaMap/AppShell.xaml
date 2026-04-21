@@ -4,12 +4,13 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:AquaMap"
-    Shell.FlyoutBehavior="Disabled"
+    xmlns:views="clr-namespace:AquaMap.Views"
+    Shell.FlyoutBehavior="Flyout"
     Title="AquaMap">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <FlyoutItem Title="Navegação">
+        <ShellContent Title="Lista de Reservatórios" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
+        <ShellContent Title="Mapa Interativo" ContentTemplate="{DataTemplate views:MapPage}" Route="MapPage" />
+    </FlyoutItem>
 
 </Shell>

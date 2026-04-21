@@ -1,4 +1,4 @@
-﻿using AquaMap.Domain.Entities;
+using AquaMap.Domain.Entities;
 using AquaMap.Domain.Interfaces;
 using AquaMap.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -9,19 +9,16 @@ namespace AquaMap.Infrastructure.Repositories
 {
     public class CollectionPointRepository : ICollectionPointRepository
     {
-        private readonly AppDbContext _dbContext;
+        private readonly AppDbContext _context;
 
-        public CollectionPointRepository(AppDbContext dbContext)
+        public CollectionPointRepository(AppDbContext context)
         {
-            _dbContext = dbContext;
+            _context = context;
         }
 
-        public async Task<List<CollectionPoint>> GetAllAsync()
+        public async Task<IEnumerable<Reservoir>> GetAllAsync()
         {
-            // Busca os pontos e inclui o histórico de análises junto (Include)
-            return await _dbContext.CollectionPoints
-                .Include(p => p.AnalysisHistory)
-                .ToListAsync();
+            return await _context.Reservoirs.ToListAsync();
         }
     }
 }

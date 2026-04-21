@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AquaMap.ViewModels"
@@ -19,7 +19,7 @@
                         ItemsSource="{Binding Points}"
                         Margin="20">
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:CollectionPoint">
+                <DataTemplate x:DataType="models:Reservoir">
                     <Border Margin="0,5" 
                             Padding="10" 
                             Stroke="Gray" 
@@ -29,12 +29,6 @@
                             <Label Text="{Binding Name}" 
                                    FontSize="18" 
                                    FontAttributes="Bold" />
-
-                            <Label Text="{Binding Description}" 
-                                   TextColor="Gray" />
-
-                            <Label Text="{Binding Latitude, StringFormat='Lat: {0:F4}'}" 
-                                   FontSize="12" />
                         </VerticalStackLayout>
 
                     </Border>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             x:Class="AquaMap.Views.MapPage"
+             x:DataType="vm:MapViewModel"
+             Title="Geomapeamento">
+
+    <Grid>
+        <!-- No Windows (WinUI 3) o Map nativo foi descontinuado pela Microsoft, 
+             então usamos um WebView universal com OpenStreetMap/Google Maps! -->
+        <WebView x:Name="ReservoirMapWebView" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
+    </Grid>
+
+</ContentPage>
