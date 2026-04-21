@@ -24,9 +24,9 @@ namespace AquaMap.Views
             // Monta o mapa via WebView (OpenStreetMap) usando a primeira coordenada encontrada
             if (_viewModel.MapPins.Count > 0)
             {
-                var firstPin = _viewModel.MapPins[0];
-                double lat = firstPin.Location.Latitude;
-                double lon = firstPin.Location.Longitude;
+                var firstReservoir = _viewModel.MapPins[0];
+                double lat = firstReservoir.Latitude;
+                double lon = firstReservoir.Longitude;
                 
                 // Bounding box para dar o nível de zoom em volta da cidade
                 double offset = 0.02;

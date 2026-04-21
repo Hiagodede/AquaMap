@@ -4,8 +4,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using Microsoft.Maui.Controls.Maps;
-using Microsoft.Maui.Devices.Sensors;
 
 namespace AquaMap.ViewModels
 {
@@ -13,7 +11,7 @@ namespace AquaMap.ViewModels
     {
         private readonly Services.ApiService _apiService;
 
-        public ObservableCollection<Pin> MapPins { get; set; } = new();
+        public ObservableCollection<Reservoir> MapPins { get; set; } = new();
 
         public ICommand LoadMapCommand { get; }
 
@@ -33,13 +31,7 @@ namespace AquaMap.ViewModels
                 // Verifica se a coordenada não é 0,0 (padrão)
                 if (reservoir.Latitude != 0 && reservoir.Longitude != 0)
                 {
-                    MapPins.Add(new Pin
-                    {
-                        Label = reservoir.Name,
-                        Address = $"Coordenadas: {reservoir.Latitude:F4}, {reservoir.Longitude:F4}",
-                        Type = PinType.Place,
-                        Location = new Location(reservoir.Latitude, reservoir.Longitude)
-                    });
+                    MapPins.Add(reservoir);
                 }
             }
         }
