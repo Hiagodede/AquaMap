@@ -1,5 +1,5 @@
 # Usa a imagem oficial do .NET SDK 10.0 (ou 9.0 dependendo da versão usada localmente)
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copia todos os arquivos de projeto primeiro para otimizar o cache do Docker (restauração de pacotes)
@@ -23,7 +23,7 @@ FROM build AS publish
 RUN dotnet publish "AquaMap.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Gera a imagem final de runtime (menor e otimizada)
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
