@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             xmlns:svc="clr-namespace:AquaMap.Services"
+             x:Class="AquaMap.Views.UserListPage"
+             x:DataType="vm:UserListViewModel"
+             Title="Técnicos"
+             BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Header -->
+        <Border Grid.Row="0" StrokeShape="RoundRectangle 0,0,20,20" Stroke="Transparent" Padding="24,20,24,18">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#155E75" Offset="0.0" />
+                    <GradientStop Color="#0891B2" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="14">
+                <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                    <Label Text="Gestão de Técnicos" FontSize="20" FontAttributes="Bold" TextColor="White" />
+                    <Label Text="Usuários autorizados no sistema" FontSize="12" TextColor="#A5F3FC" Opacity="0.85" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1" Text="+" Command="{Binding AddUserCommand}" FontSize="22" FontAttributes="Bold" TextColor="White" BackgroundColor="#06B6D4" CornerRadius="12" WidthRequest="44" HeightRequest="44" Padding="0" VerticalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+
+            <!-- Loading -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource AquaPrimary}" VerticalOptions="Center" HorizontalOptions="Center" HeightRequest="40" WidthRequest="40" />
+
+            <!-- Empty State -->
+            <VerticalStackLayout IsVisible="{Binding IsEmpty}" VerticalOptions="Center" HorizontalOptions="Center" Spacing="10" Padding="40">
+                <Label Text="👤" FontSize="48" HorizontalOptions="Center" />
+                <Label Text="Nenhum técnico cadastrado" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
+                <Label Text="Toque no + para adicionar um novo técnico." FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <!-- User List -->
+            <CollectionView ItemsSource="{Binding Users}" IsVisible="{Binding HasData}" Margin="16,12,16,8">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="svc:UserDto">
+                        <Border Margin="0,6" Padding="16,14" StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}">
+                            <Border.Shadow><Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.06" /></Border.Shadow>
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
+                                <!-- Avatar -->
+                                <Border WidthRequest="44" HeightRequest="44" StrokeShape="RoundRectangle 22" Stroke="Transparent" BackgroundColor="{StaticResource AquaLight}" VerticalOptions="Center">
+                                    <Label Text="👤" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <!-- Info -->
+                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                                    <Label Text="{Binding FullName}" FontSize="15" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding TaxId}" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding RoleLabel}" FontSize="11" TextColor="{StaticResource AquaPrimary}" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <!-- Delete -->
+                                <Button Grid.Column="2" Text="✕" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:UserListViewModel}}, Path=DeleteUserCommand}" CommandParameter="{Binding .}" FontSize="14" TextColor="#EF4444" BackgroundColor="#FEE2E2" CornerRadius="10" WidthRequest="36" HeightRequest="36" Padding="0" VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>

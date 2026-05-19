@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             x:Class="AquaMap.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Title="Acesso Técnico"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0.3,1">
+            <GradientStop Color="#0E4F63" Offset="0.0" />
+            <GradientStop Color="#0891B2" Offset="0.5" />
+            <GradientStop Color="#06B6D4" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <Grid RowDefinitions="Auto,*,Auto" Padding="24" MinimumHeightRequest="700">
+
+            <!-- ══ Header Branding ══ -->
+            <VerticalStackLayout Grid.Row="0" Spacing="4" HorizontalOptions="Center" Margin="0,60,0,30">
+                <Image Source="aquamap_logo.png"
+                       HeightRequest="90"
+                       WidthRequest="90"
+                       HorizontalOptions="Center">
+                    <Image.Shadow>
+                        <Shadow Brush="#000000" Offset="0,4" Radius="20" Opacity="0.3" />
+                    </Image.Shadow>
+                </Image>
+                <Label Text="AquaMap"
+                       FontSize="32"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       Margin="0,12,0,0" />
+                <Label Text="Monitoramento de Qualidade da Água"
+                       FontSize="13"
+                       TextColor="#A5F3FC"
+                       HorizontalOptions="Center"
+                       Opacity="0.9" />
+            </VerticalStackLayout>
+
+            <!-- ══ Login Card ══ -->
+            <Border Grid.Row="1"
+                    StrokeShape="RoundRectangle 24"
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}"
+                    Stroke="Transparent"
+                    Padding="28,32"
+                    VerticalOptions="Start"
+                    MaximumWidthRequest="420">
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Offset="0,12" Radius="32" Opacity="0.2" />
+                </Border.Shadow>
+
+                <VerticalStackLayout Spacing="18">
+
+                    <Label Text="Acesso Técnico"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#0E4F63, Dark=White}"
+                           HorizontalOptions="Center" />
+
+                    <Label Text="Insira suas credenciais para lançar análises de água."
+                           FontSize="13"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"
+                           Margin="0,0,0,8" />
+
+                    <!-- CPF Field -->
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="CPF"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                        <Border StrokeShape="RoundRectangle 12"
+                                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                                BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}"
+                                Padding="16,2"
+                                HeightRequest="52">
+                            <Entry Placeholder="000.000.000-00"
+                                   Text="{Binding TaxId}"
+                                   Keyboard="Numeric"
+                                   MaxLength="14"
+                                   FontSize="16"
+                                   TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                                   PlaceholderColor="{StaticResource TextMuted}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Password Field -->
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Senha"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#475569, Dark=#94A3B8}" />
+                        <Border StrokeShape="RoundRectangle 12"
+                                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                                BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}"
+                                Padding="6,2"
+                                HeightRequest="52">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Entry Grid.Column="0"
+                                       Placeholder="Sua senha"
+                                       Text="{Binding Password}"
+                                       IsPassword="{Binding IsPasswordHidden}"
+                                       FontSize="16"
+                                       Margin="10,0,0,0"
+                                       TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                                       PlaceholderColor="{StaticResource TextMuted}" />
+                                <Button Grid.Column="1"
+                                        Command="{Binding TogglePasswordCommand}"
+                                        WidthRequest="50"
+                                        HeightRequest="40"
+                                        VerticalOptions="Center"
+                                        BackgroundColor="Transparent"
+                                        FontSize="13"
+                                        TextColor="{StaticResource AquaPrimary}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsPasswordHidden}" Value="True">
+                                            <Setter Property="Text" Value="Ver" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsPasswordHidden}" Value="False">
+                                            <Setter Property="Text" Value="Ocultar" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Login Button -->
+                    <Button Text="Entrar"
+                            Command="{Binding LoginCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            HeightRequest="52"
+                            CornerRadius="14"
+                            TextColor="White"
+                            Margin="0,8,0,0">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#0891B2" Offset="0.0" />
+                                <GradientStop Color="#06B6D4" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <Button.Shadow>
+                            <Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.4" />
+                        </Button.Shadow>
+                    </Button>
+
+                    <!-- Loading -->
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       IsVisible="{Binding IsBusy}"
+                                       Color="{StaticResource AquaPrimary}"
+                                       HorizontalOptions="Center" />
+
+                    <!-- Error Message -->
+                    <Border IsVisible="{Binding HasError}"
+                            StrokeShape="RoundRectangle 10"
+                            BackgroundColor="{StaticResource StatusDangerLight}"
+                            Stroke="{StaticResource StatusDanger}"
+                            StrokeThickness="1"
+                            Padding="14,10"
+                            >
+                        <Label Text="{Binding ErrorMessage}"
+                               TextColor="{StaticResource StatusDanger}"
+                               FontSize="13"
+                               HorizontalTextAlignment="Center"
+                               HorizontalOptions="Center" />
+                    </Border>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ══ Footer ══ -->
+            <Label Grid.Row="2"
+                   Text="SAAE Alegre • Sistema AquaMap v1.0"
+                   FontSize="11"
+                   TextColor="#A5F3FC"
+                   Opacity="0.6"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,10" />
+
+        </Grid>
+    </ScrollView>
+
+</ContentPage>

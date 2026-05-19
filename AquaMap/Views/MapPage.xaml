@@ -4,12 +4,61 @@
              xmlns:vm="clr-namespace:AquaMap.ViewModels"
              x:Class="AquaMap.Views.MapPage"
              x:DataType="vm:MapViewModel"
-             Title="Geomapeamento">
+             Title="Geomapeamento"
+             BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
 
     <Grid>
-        <!-- No Windows (WinUI 3) o Map nativo foi descontinuado pela Microsoft, 
-             então usamos um WebView universal com OpenStreetMap/Google Maps! -->
-        <WebView x:Name="ReservoirMapWebView" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
-    </Grid>
+        <!-- WebView (Windows) -->
+        <WebView x:Name="ReservoirMapWebView"
+                 HorizontalOptions="FillAndExpand"
+                 VerticalOptions="FillAndExpand" />
 
+        <!-- Floating Header -->
+        <Border VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                Margin="16,12"
+                StrokeShape="RoundRectangle 14"
+                Stroke="Transparent"
+                Padding="16,12"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
+            <Border.Shadow><Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.12" /></Border.Shadow>
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                <Image Source="aquamap_logo.png" HeightRequest="32" WidthRequest="32" VerticalOptions="Center" />
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                    <Label Text="Mapa de Reservatórios" FontSize="15" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=White}" />
+                    <Label Text="Alegre — ES" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
+                <!-- Counter -->
+                <Border Grid.Column="2" StrokeShape="RoundRectangle 10" BackgroundColor="{StaticResource AquaPrimary}" Stroke="Transparent" Padding="10,4" VerticalOptions="Center">
+                    <Label Text="{Binding PinCount, StringFormat='{0} pts'}" FontSize="12" FontAttributes="Bold" TextColor="White" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Floating Legend -->
+        <Border VerticalOptions="End"
+                HorizontalOptions="Start"
+                Margin="16,0,16,20"
+                StrokeShape="RoundRectangle 12"
+                Stroke="Transparent"
+                Padding="14,10"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
+            <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.1" /></Border.Shadow>
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Legenda" FontSize="12" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+                <HorizontalStackLayout Spacing="6">
+                    <BoxView Color="#10B981" WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" />
+                    <Label Text="Potável" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6">
+                    <BoxView Color="#EF4444" WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" />
+                    <Label Text="Imprópria" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6">
+                    <BoxView Color="#F59E0B" WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" />
+                    <Label Text="Sem dados" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
 </ContentPage>

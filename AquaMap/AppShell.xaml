@@ -5,12 +5,29 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:AquaMap"
     xmlns:views="clr-namespace:AquaMap.Views"
-    Shell.FlyoutBehavior="Flyout"
+    Shell.FlyoutBehavior="Disabled"
+    Shell.NavBarHasShadow="False"
+    Shell.BackgroundColor="{AppThemeBinding Light={StaticResource AquaPrimaryDark}, Dark={StaticResource SurfaceDark}}"
+    Shell.ForegroundColor="{StaticResource White}"
+    Shell.TitleColor="{StaticResource White}"
+    Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
+    Shell.TabBarForegroundColor="{StaticResource AquaPrimary}"
+    Shell.TabBarTitleColor="{StaticResource AquaPrimary}"
+    Shell.TabBarUnselectedColor="{StaticResource TextMuted}"
     Title="AquaMap">
 
-    <FlyoutItem Title="Navegação">
-        <ShellContent Title="Lista de Reservatórios" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
-        <ShellContent Title="Mapa Interativo" ContentTemplate="{DataTemplate views:MapPage}" Route="MapPage" />
-    </FlyoutItem>
+    <TabBar>
+        <Tab Title="Reservatórios" Icon="tab_water.svg">
+            <ShellContent ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
+        </Tab>
+
+        <Tab Title="Mapa" Icon="tab_map.svg">
+            <ShellContent ContentTemplate="{DataTemplate views:MapPage}" Route="MapPage" />
+        </Tab>
+
+        <Tab Title="Técnico" Icon="tab_tech.svg">
+            <ShellContent ContentTemplate="{DataTemplate views:LoginPage}" Route="LoginPage" />
+        </Tab>
+    </TabBar>
 
 </Shell>

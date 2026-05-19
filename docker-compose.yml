@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: aquamap_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: AquaMapDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aquamap_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # A API vai ler essa Connection String para conectar no banco de dados
+      - ConnectionStrings__DefaultConnection=Host=db;Database=AquaMapDb;Username=postgres;Password=adminpassword
+      - JwtSettings__Key=UmaChaveSuperSecretaParaProducaoAcimaDe32Caracteres
+      - JwtSettings__Issuer=AquaMapApi
+      - JwtSettings__Audience=AquaMapApp
+    ports:
+      - "5059:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  pgdata:

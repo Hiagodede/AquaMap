@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             x:Class="AquaMap.Views.UserFormPage"
+             x:DataType="vm:UserFormViewModel"
+             Title="Novo Técnico"
+             BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="20,16">
+
+            <!-- Header Card -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="Transparent" Padding="20,16">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#155E75" Offset="0.0" />
+                        <GradientStop Color="#0891B2" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Cadastrar Técnico" FontSize="20" FontAttributes="Bold" TextColor="White" />
+                    <Label Text="Preencha os dados do novo usuário" FontSize="13" TextColor="#A5F3FC" Opacity="0.85" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Dados Pessoais -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="👤 Dados Pessoais" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Nome Completo" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="Ex: João da Silva" Text="{Binding FullName}" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="CPF" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="000.000.000-00" Text="{Binding TaxId}" Keyboard="Numeric" MaxLength="14" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Contato -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="📧 Contato" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="E-mail" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="email@exemplo.com" Text="{Binding Email}" Keyboard="Email" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Telefone" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="(28) 99999-9999" Text="{Binding Phone}" Keyboard="Telephone" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Segurança -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="🔐 Segurança" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Senha" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="Mínimo 6 caracteres" Text="{Binding Password}" IsPassword="True" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*, Auto">
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <Label Text="Perfil Administrador?" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+                            <Label Text="Pode gerenciar reservatórios e técnicos" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Switch Grid.Column="1" IsToggled="{Binding IsAdmin}" OnColor="{StaticResource AquaPrimary}" VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Save Button -->
+            <Button Text="Cadastrar Técnico" Command="{Binding SaveCommand}" IsEnabled="{Binding IsNotBusy}" FontSize="16" FontAttributes="Bold" HeightRequest="52" CornerRadius="14" TextColor="White" Margin="0,4,0,0">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#0891B2" Offset="0.0" />
+                        <GradientStop Color="#06B6D4" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Button.Background>
+                <Button.Shadow><Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.35" /></Button.Shadow>
+            </Button>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource AquaPrimary}" HorizontalOptions="Center" />
+
+            <!-- Status Message -->
+            <Border IsVisible="{Binding HasStatus}" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="16,12" Margin="0,0,0,10">
+                <Border.Triggers>
+                    <DataTrigger TargetType="Border" Binding="{Binding IsSuccess}" Value="True"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
+                    <DataTrigger TargetType="Border" Binding="{Binding IsSuccess}" Value="False"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>
+                </Border.Triggers>
+                <Label Text="{Binding StatusMessage}" FontSize="13" HorizontalTextAlignment="Center" HorizontalOptions="Center">
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label" Binding="{Binding IsSuccess}" Value="True"><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
+                        <DataTrigger TargetType="Label" Binding="{Binding IsSuccess}" Value="False"><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

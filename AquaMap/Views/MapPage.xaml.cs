@@ -28,18 +28,63 @@ namespace AquaMap.Views
                 double lat = firstReservoir.Latitude;
                 double lon = firstReservoir.Longitude;
                 
-                // Bounding box para dar o nível de zoom em volta da cidade
+                // WebView Logic (Windows)
                 double offset = 0.02;
+                string latStr = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string lonStr = lon.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string minLonStr = (lon - offset).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string minLatStr = (lat - offset).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string maxLonStr = (lon + offset).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string maxLatStr = (lat + offset).ToString(System.Globalization.CultureInfo.InvariantCulture);
                 
-                string mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={lon - offset}%2C{lat - offset}%2C{lon + offset}%2C{lat + offset}&layer=mapnik&marker={lat}%2C{lon}";
-                
+                string mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={minLonStr}%2C{minLatStr}%2C{maxLonStr}%2C{maxLatStr}&layer=mapnik&marker={latStr}%2C{lonStr}";
                 ReservoirMapWebView.Source = mapUrl;
+
+#if ANDROID
+                // Native Map Logic (Android) - adiciona o mapa nativamente
+                AddNativeMap(lat, lon);
+#endif
             }
             else
             {
                 // Se não tiver pinos, mostra o centro de Alegre-ES
                 ReservoirMapWebView.Source = "https://www.openstreetmap.org/export/embed.html?bbox=-41.55%2C-20.78%2C-41.51%2C-20.74&layer=mapnik&marker=-20.7636%2C-41.5333";
+#if ANDROID
+                AddNativeMap(-20.7636, -41.5333);
+#endif
             }
         }
+
+#if ANDROID
+        private void AddNativeMap(double lat, double lon)
+        {
+            // Esconde o WebView no Android e mostra o mapa nativo
+            ReservoirMapWebView.IsVisible = false;
+
+            var grid = (Grid)Content;
+
+            var nativeMap = new Microsoft.Maui.Controls.Maps.Map
+            {
+                ItemsSource = _viewModel.NativePins,
+                ItemTemplate = new DataTemplate(() =>
+                {
+                    var pin = new AquaMap.Controls.CustomPin();
+                    pin.SetBinding(AquaMap.Controls.CustomPin.LocationProperty, "Location");
+                    pin.SetBinding(AquaMap.Controls.CustomPin.AddressProperty, "Address");
+                    pin.SetBinding(AquaMap.Controls.CustomPin.LabelProperty, "Label");
+                    pin.SetBinding(AquaMap.Controls.CustomPin.TypeProperty, "Type");
+                    pin.SetBinding(AquaMap.Controls.CustomPin.PinColorProperty, "PinColor");
+                    return pin;
+                })
+            };
+
+            var mapSpan = new Microsoft.Maui.Maps.MapSpan(
+                new Microsoft.Maui.Devices.Sensors.Location(lat, lon), 0.05, 0.05);
+            nativeMap.MoveToRegion(mapSpan);
+
+            // Insere o mapa no início do Grid (atrás dos overlays)
+            grid.Children.Insert(0, nativeMap);
+        }
+#endif
     }
 }

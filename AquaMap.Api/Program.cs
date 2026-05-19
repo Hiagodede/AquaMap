@@ -51,10 +51,14 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Seeder automático de Usuário Admin
+// Aplicar Migrations automaticamente no banco de dados e Semear Usuário Admin
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // Roda todas as migrações pendentes no banco (ex: quando subir no Render/Supabase)
+    db.Database.Migrate();
+
     if (!db.Users.Any())
     {
         var hash = BCrypt.Net.BCrypt.HashPassword("admin123");
@@ -91,9 +95,59 @@ app.MapGet("/reservoirs", async (AppDbContext db) =>
 {
     return await db.Reservoirs
         .Include(r => r.Neighborhoods)
+        .Include(r => r.WaterAnalyses)
         .ToListAsync();
 })
 .WithName("GetReservoirs");
+
+app.MapGet("/reservoirs/{id}", async (AppDbContext db, int id) =>
+{
+    var reservoir = await db.Reservoirs
+        .Include(r => r.Neighborhoods)
+        .Include(r => r.WaterAnalyses.OrderByDescending(w => w.AnalysisDate))
+        .FirstOrDefaultAsync(r => r.Id == id);
+    return reservoir is null ? Results.NotFound() : Results.Ok(reservoir);
+})
+.WithName("GetReservoirById");
+
+app.MapPost("/reservoirs", async (AppDbContext db, ReservoirRequest request) =>
+{
+    var reservoir = new Reservoir
+    {
+        Name = request.Name,
+        Latitude = request.Latitude,
+        Longitude = request.Longitude
+    };
+    db.Reservoirs.Add(reservoir);
+    await db.SaveChangesAsync();
+    return Results.Created($"/reservoirs/{reservoir.Id}", reservoir);
+})
+.WithName("CreateReservoir")
+.RequireAuthorization();
+
+app.MapPut("/reservoirs/{id}", async (AppDbContext db, int id, ReservoirRequest request) =>
+{
+    var reservoir = await db.Reservoirs.FindAsync(id);
+    if (reservoir is null) return Results.NotFound();
+    reservoir.Name = request.Name;
+    reservoir.Latitude = request.Latitude;
+    reservoir.Longitude = request.Longitude;
+    await db.SaveChangesAsync();
+    return Results.Ok(reservoir);
+})
+.WithName("UpdateReservoir")
+.RequireAuthorization();
+
+app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
+{
+    var reservoir = await db.Reservoirs.FindAsync(id);
+    if (reservoir is null) return Results.NotFound();
+    db.Reservoirs.Remove(reservoir);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+})
+.WithName("DeleteReservoir")
+.RequireAuthorization();
 
 app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =>
 {
@@ -104,6 +158,52 @@ app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =
 .WithName("CreateWaterAnalysis")
 .RequireAuthorization();
 
+app.MapGet("/water-analysis/{reservoirId}", async (AppDbContext db, int reservoirId) =>
+{
+    return await db.WaterAnalyses
+        .Where(w => w.ReservoirId == reservoirId)
+        .OrderByDescending(w => w.AnalysisDate)
+        .ToListAsync();
+})
+.WithName("GetWaterAnalysisByReservoir");
+
+app.MapPost("/users", async (AppDbContext db, CreateUserRequest request) =>
+{
+    var exists = await db.Users.AnyAsync(u => u.TaxId == request.TaxId);
+    if (exists) return Results.Conflict("Usuário já cadastrado com esse CPF.");
+
+    var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+    var user = new User(request.FullName, request.TaxId, request.BirthDate, request.Address, request.PhoneNumber, request.Email, hash, request.Role);
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+    return Results.Created($"/users/{user.Id}", new { user.Id, user.FullName, user.TaxId, user.Role });
+})
+.WithName("CreateUser")
+.RequireAuthorization();
+
+app.MapGet("/users", async (AppDbContext db) =>
+{
+    return await db.Users
+        .Select(u => new { u.Id, u.FullName, u.TaxId, u.Email, u.PhoneNumber, u.Role })
+        .ToListAsync();
+})
+.WithName("GetUsers")
+.RequireAuthorization();
+
+app.MapDelete("/users/{id}", async (AppDbContext db, Guid id) =>
+{
+    var user = await db.Users.FindAsync(id);
+    if (user is null) return Results.NotFound();
+    db.Users.Remove(user);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+})
+.WithName("DeleteUser")
+.RequireAuthorization();
+
 app.Run();
 
 public record LoginRequest(string TaxId, string Password);
+public record ReservoirRequest(string Name, double Latitude, double Longitude);
+public record CreateUserRequest(string FullName, string TaxId, DateTime BirthDate, string Address, string PhoneNumber, string Email, string Password, UserType Role);
+
