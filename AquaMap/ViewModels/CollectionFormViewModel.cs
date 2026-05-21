@@ -8,12 +8,16 @@ using System.Windows.Input;
 using Microsoft.Maui.Storage;
 using AquaMap.Domain.Entities;
 using AquaMap.Services;
+using AquaMap.Models;
+using Microsoft.Maui.Networking;
 
 namespace AquaMap.ViewModels
 {
     public class CollectionFormViewModel : INotifyPropertyChanged
     {
         private readonly ApiService _apiService;
+        private readonly LocalDatabaseService _localDbService;
+        private readonly SyncService _syncService;
 
         public ObservableCollection<Reservoir> Reservoirs { get; set; } = new();
 
@@ -158,9 +162,11 @@ namespace AquaMap.ViewModels
         public ICommand LogoutCommand { get; }
         public ICommand ManageUsersCommand { get; }
 
-        public CollectionFormViewModel(ApiService apiService)
+        public CollectionFormViewModel(ApiService apiService, LocalDatabaseService localDbService, SyncService syncService)
         {
             _apiService = apiService;
+            _localDbService = localDbService;
+            _syncService = syncService;
             SubmitCommand = new Command(async () => await SubmitAnalysisAsync());
             LoadReservoirsCommand = new Command(async () => await LoadReservoirsAsync());
             LogoutCommand = new Command(async () => await LogoutAsync());
@@ -293,19 +299,67 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             try
             {
-                var data = await _apiService.GetReservoirsAsync();
-                Reservoirs.Clear();
-                foreach (var res in data)
+                // 1. Carrega do banco de dados local primeiro (Offline-First)
+                var cached = await _localDbService.GetReservoirsAsync().ConfigureAwait(false);
+                if (cached != null && cached.Count > 0)
                 {
-                    Reservoirs.Add(res);
+                    var mappedPoints = cached.Select(c => new Reservoir
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Latitude = c.Latitude,
+                        Longitude = c.Longitude
+                    }).ToList();
+
+                    Reservoirs.Clear();
+                    foreach (var res in mappedPoints)
+                    {
+                        Reservoirs.Add(res);
+                    }
+
+                    // Restore selected reservoir from draft
+                    int savedId = Preferences.Default.Get("Draft_Collection_ReservoirId", -1);
+                    if (savedId != -1)
+                    {
+                        SelectedReservoir = Reservoirs.FirstOrDefault(r => r.Id == savedId);
+                    }
                 }
 
-                // Restore selected reservoir from draft
-                int savedId = Preferences.Default.Get("Draft_Collection_ReservoirId", -1);
-                if (savedId != -1)
+                // 2. Se houver rede, busca na API de forma transparente para atualizar o cache local e a lista
+                if (Connectivity.NetworkAccess == NetworkAccess.Internet)
                 {
-                    SelectedReservoir = Reservoirs.FirstOrDefault(r => r.Id == savedId);
+                    var data = await _apiService.GetReservoirsAsync().ConfigureAwait(false);
+                    if (data != null)
+                    {
+                        Reservoirs.Clear();
+                        foreach (var res in data)
+                        {
+                            Reservoirs.Add(res);
+                        }
+
+                        // Restore selected reservoir from draft
+                        int savedId = Preferences.Default.Get("Draft_Collection_ReservoirId", -1);
+                        if (savedId != -1)
+                        {
+                            SelectedReservoir = Reservoirs.FirstOrDefault(r => r.Id == savedId);
+                        }
+
+                        // Salva os reservatórios na base SQLite
+                        var localReservoirs = data.Select(r => new LocalReservoir
+                        {
+                            Id = r.Id,
+                            Name = r.Name,
+                            Latitude = r.Latitude,
+                            Longitude = r.Longitude
+                        }).ToList();
+
+                        await _localDbService.SaveReservoirsAsync(localReservoirs).ConfigureAwait(false);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar reservatórios: {ex.Message}");
             }
             finally
             {
@@ -375,57 +429,68 @@ namespace AquaMap.ViewModels
 
             try
             {
-                var analysis = new WaterAnalysis
+                // Criar entidade local do banco de dados SQLite com IsPendingSync = true
+                var localAnalysis = new LocalWaterAnalysis
                 {
-                    AnalysisDate = DateTime.UtcNow, 
-                    ResidualChlorine = chlorine, 
-                    Ph = phVal, 
-                    Turbidity = turbidityVal, 
-                    EColiAbsent = EColiAbsent, 
-                    ReservoirId = SelectedReservoir.Id
+                    AnalysisDate = DateTime.UtcNow,
+                    ResidualChlorine = chlorine,
+                    Ph = phVal,
+                    Turbidity = turbidityVal,
+                    EColiAbsent = EColiAbsent,
+                    ReservoirId = SelectedReservoir.Id,
+                    IsPendingSync = true
                 };
 
-                var success = await _apiService.SubmitWaterAnalysisAsync(analysis, token);
+                await _localDbService.SaveAnalysisAsync(localAnalysis);
 
-                if (success)
+                bool online = Connectivity.NetworkAccess == NetworkAccess.Internet;
+                bool syncSuccess = false;
+
+                if (online)
                 {
-                    IsSuccess = true;
-                    StatusColor = "Green";
-                    StatusMessage = "Análise salva com sucesso!";
-                    
-                    // Limpar campos e rascunho
-                    ClearDraft();
-                    _residualChlorine = ""; 
-                    _ph = ""; 
-                    _turbidity = "";
-                    _selectedReservoir = null;
-                    _eColiAbsent = true;
-                    OnPropertyChanged(nameof(ResidualChlorine));
-                    OnPropertyChanged(nameof(Ph));
-                    OnPropertyChanged(nameof(Turbidity));
-                    OnPropertyChanged(nameof(SelectedReservoir));
-                    OnPropertyChanged(nameof(EColiAbsent));
+                    // Tenta sincronizar imediatamente em segundo plano
+                    syncSuccess = await _syncService.SyncPendingAnalysisAsync();
+                }
 
-                    // Reset warnings
-                    IsChlorineValid = true;
-                    ChlorineWarning = string.Empty;
-                    IsPhValid = true;
-                    PhWarning = string.Empty;
-                    IsTurbidityValid = true;
-                    TurbidityWarning = string.Empty;
+                // Limpar campos e rascunho
+                ClearDraft();
+                _residualChlorine = ""; 
+                _ph = ""; 
+                _turbidity = "";
+                _selectedReservoir = null;
+                _eColiAbsent = true;
+                OnPropertyChanged(nameof(ResidualChlorine));
+                OnPropertyChanged(nameof(Ph));
+                OnPropertyChanged(nameof(Turbidity));
+                OnPropertyChanged(nameof(SelectedReservoir));
+                OnPropertyChanged(nameof(EColiAbsent));
+
+                // Reset warnings
+                IsChlorineValid = true;
+                ChlorineWarning = string.Empty;
+                IsPhValid = true;
+                PhWarning = string.Empty;
+                IsTurbidityValid = true;
+                TurbidityWarning = string.Empty;
+
+                IsSuccess = true;
+                StatusColor = "Green";
+                if (syncSuccess)
+                {
+                    StatusMessage = "Coleta registrada e enviada com sucesso!";
                 }
                 else
                 {
-                    IsSuccess = false;
-                    StatusColor = "Red";
-                    StatusMessage = "Erro ao salvar análise. Verifique conexão e permissões.";
+                    StatusMessage = online 
+                        ? "Coleta registrada localmente! Sincronização em andamento..." 
+                        : "Coleta registrada com sucesso! (Salva offline)";
                 }
             }
             catch (Exception ex)
             {
                 IsSuccess = false;
                 StatusColor = "Red";
-                StatusMessage = $"Erro de conexão: {ex.Message}";
+                StatusMessage = $"Erro ao salvar coleta: {ex.Message}";
             }
             finally
             {

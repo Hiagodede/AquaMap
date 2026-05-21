@@ -1,12 +1,13 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.Maui.Networking;
 using AquaMap.Domain.Entities;
 using AquaMap.Services;
+using System.Linq;
 
 namespace AquaMap.ViewModels
 {
@@ -15,6 +16,7 @@ namespace AquaMap.ViewModels
     public class ReservoirDetailViewModel : INotifyPropertyChanged
     {
         private readonly ApiService _apiService;
+        private readonly LocalDatabaseService _localDbService;
 
         public ObservableCollection<WaterAnalysis> AnalysisHistory { get; set; } = new();
 
@@ -70,9 +72,10 @@ namespace AquaMap.ViewModels
         public ICommand LoadHistoryCommand { get; }
         public ICommand EditReservoirCommand { get; }
 
-        public ReservoirDetailViewModel(ApiService apiService)
+        public ReservoirDetailViewModel(ApiService apiService, LocalDatabaseService localDbService)
         {
             _apiService = apiService;
+            _localDbService = localDbService;
             LoadHistoryCommand = new Command(async () => await LoadHistoryAsync());
             EditReservoirCommand = new Command(async () =>
             {
@@ -96,20 +99,93 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             try
             {
-                var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId);
-                AnalysisHistory.Clear();
-                WaterAnalysis? latest = null;
-                foreach (var item in data)
+                // 1. Carrega do banco de dados local primeiro (Offline-First)
+                var cached = await _localDbService.GetAnalysisHistoryAsync(ReservoirId).ConfigureAwait(false);
+                if (cached != null && cached.Count > 0)
                 {
-                    AnalysisHistory.Add(item);
-                    if (latest == null || item.AnalysisDate > latest.AnalysisDate)
+                    var mappedHistory = cached.Select(c => new WaterAnalysis
                     {
-                        latest = item;
+                        Id = c.Id,
+                        AnalysisDate = c.AnalysisDate,
+                        ResidualChlorine = c.ResidualChlorine,
+                        Ph = c.Ph,
+                        Turbidity = c.Turbidity,
+                        EColiAbsent = c.EColiAbsent,
+                        ReservoirId = c.ReservoirId,
+                        IsPendingSync = c.IsPendingSync
+                    }).ToList();
+
+                    AnalysisHistory.Clear();
+                    WaterAnalysis? latest = null;
+                    foreach (var item in mappedHistory)
+                    {
+                        AnalysisHistory.Add(item);
+                        if (latest == null || item.AnalysisDate > latest.AnalysisDate)
+                        {
+                            latest = item;
+                        }
+                    }
+                    LatestAnalysis = latest;
+                    HasData = AnalysisHistory.Count > 0;
+                    IsEmpty = !HasData;
+                }
+
+                // 2. Busca da API em segundo plano se conectado à internet (Stale-While-Revalidate)
+                if (Connectivity.NetworkAccess == NetworkAccess.Internet)
+                {
+                    var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId).ConfigureAwait(false);
+                    if (data != null)
+                    {
+                        // Salva os dados baixados no banco de dados local
+                        var localList = data.Select(a => new Models.LocalWaterAnalysis
+                        {
+                            Id = a.Id,
+                            AnalysisDate = a.AnalysisDate,
+                            ResidualChlorine = a.ResidualChlorine,
+                            Ph = a.Ph,
+                            Turbidity = a.Turbidity,
+                            EColiAbsent = a.EColiAbsent,
+                            ReservoirId = a.ReservoirId,
+                            IsPendingSync = false
+                        }).ToList();
+
+                        await _localDbService.SaveAnalysisHistoryAsync(ReservoirId, localList).ConfigureAwait(false);
+
+                        // Recarrega do banco local para obter a mesclagem com dados que porventura ainda estejam pendentes de sincronização
+                        var merged = await _localDbService.GetAnalysisHistoryAsync(ReservoirId).ConfigureAwait(false);
+                        if (merged != null)
+                        {
+                            AnalysisHistory.Clear();
+                            WaterAnalysis? latest = null;
+                            foreach (var c in merged)
+                            {
+                                var item = new WaterAnalysis
+                                {
+                                    Id = c.Id,
+                                    AnalysisDate = c.AnalysisDate,
+                                    ResidualChlorine = c.ResidualChlorine,
+                                    Ph = c.Ph,
+                                    Turbidity = c.Turbidity,
+                                    EColiAbsent = c.EColiAbsent,
+                                    ReservoirId = c.ReservoirId,
+                                    IsPendingSync = c.IsPendingSync
+                                };
+                                AnalysisHistory.Add(item);
+                                if (latest == null || item.AnalysisDate > latest.AnalysisDate)
+                                {
+                                    latest = item;
+                                }
+                            }
+                            LatestAnalysis = latest;
+                            HasData = AnalysisHistory.Count > 0;
+                            IsEmpty = !HasData;
+                        }
                     }
                 }
-                LatestAnalysis = latest;
-                HasData = AnalysisHistory.Count > 0;
-                IsEmpty = !HasData;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar histórico: {ex.Message}");
             }
             finally
             {

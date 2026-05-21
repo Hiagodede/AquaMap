@@ -116,9 +116,46 @@
                         <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="10">
 
                             <!-- Data + Status -->
-                            <Grid ColumnDefinitions="*, Auto">
-                                <Label Text="{Binding AnalysisDate, StringFormat='{0:dd/MM/yyyy HH:mm}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" />
-                                <Border Grid.Column="1" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="10,4" VerticalOptions="Center">
+                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                <Label Text="{Binding AnalysisDate, StringFormat='{0:dd/MM/yyyy HH:mm}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" VerticalOptions="Center" />
+                                
+                                <!-- Sync Badge -->
+                                <Border Grid.Column="1" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="8,4" Margin="0,0,8,0" VerticalOptions="Center">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsPendingSync}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="#FEF3C7" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsPendingSync}" Value="False">
+                                            <Setter Property="BackgroundColor" Value="#ECFDF5" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                        <Label FontSize="11" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="True">
+                                                    <Setter Property="Text" Value="⏳" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="False">
+                                                    <Setter Property="Text" Value="☁️" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label FontSize="10" FontAttributes="Bold" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="True">
+                                                    <Setter Property="Text" Value="Pendente" />
+                                                    <Setter Property="TextColor" Value="#D97706" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="False">
+                                                    <Setter Property="Text" Value="Sincronizado" />
+                                                    <Setter Property="TextColor" Value="#059669" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </HorizontalStackLayout>
+                                </Border>
+
+                                <Border Grid.Column="2" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="10,4" VerticalOptions="Center">
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsPotable}" Value="True"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsPotable}" Value="False"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>

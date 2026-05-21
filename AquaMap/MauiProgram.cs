@@ -85,8 +85,10 @@ namespace AquaMap
                 throw new InvalidOperationException("A URL base da API não foi configurada nas configurações do aplicativo (appsettings.json).");
             }
 
-            // --- REGISTRAR SERVIÇOS DE API ---
+            // --- REGISTRAR SERVIÇOS DE API E LOCAIS ---
             builder.Services.AddSingleton(new ApiService(new System.Net.Http.HttpClient { BaseAddress = new System.Uri(baseUrl) }));
+            builder.Services.AddSingleton<LocalDatabaseService>();
+            builder.Services.AddSingleton<SyncService>();
 
             // --- REGISTRAR TELAS E VIEWMODELS ---
             builder.Services.AddTransient<MainViewModel>();

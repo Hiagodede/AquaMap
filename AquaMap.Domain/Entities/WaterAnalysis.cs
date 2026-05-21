@@ -6,6 +6,7 @@ namespace AquaMap.Domain.Entities
     {
         public int Id { get; set; }
         public DateTime AnalysisDate { get; set; } = DateTime.UtcNow;
+        public bool IsPendingSync { get; set; } = false;
 
         // Parâmetros avaliados
         public double ResidualChlorine { get; set; } // 0.2 a 5.0

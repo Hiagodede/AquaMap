@@ -1,17 +1,20 @@
-using AquaMap.Domain.Entities;
-using AquaMap.Domain.Interfaces;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using Microsoft.Maui.Networking;
+using AquaMap.Domain.Entities;
+using AquaMap.Domain.Interfaces;
+using System.Linq;
 
 namespace AquaMap.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly Services.ApiService _apiService;
+        private readonly Services.LocalDatabaseService _localDbService;
         private System.Collections.Generic.List<Reservoir> _allPoints = new();
         private string _searchText = string.Empty;
 
@@ -53,9 +56,10 @@ namespace AquaMap.ViewModels
         public ICommand OpenDetailCommand { get; }
         public ICommand AddReservoirCommand { get; }
 
-        public MainViewModel(Services.ApiService apiService)
+        public MainViewModel(Services.ApiService apiService, Services.LocalDatabaseService localDbService)
         {
             _apiService = apiService;
+            _localDbService = localDbService;
 
             // Configura o comando para carregar os dados
             LoadPointsCommand = new Command(async () => await LoadDataAsync());
@@ -95,9 +99,87 @@ namespace AquaMap.ViewModels
 
             try
             {
-                var data = await _apiService.GetReservoirsAsync();
-                _allPoints = data ?? new System.Collections.Generic.List<Reservoir>();
-                FilterPoints();
+                // 1. Carrega do banco de dados local primeiro (Offline-First)
+                var cached = await _localDbService.GetReservoirsAsync().ConfigureAwait(false);
+                if (cached != null && cached.Count > 0)
+                {
+                    var mappedPoints = cached.Select(c => new Reservoir
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Latitude = c.Latitude,
+                        Longitude = c.Longitude
+                    }).ToList();
+
+                    // Carrega as análises do banco local para computar o StatusColor
+                    foreach (var r in mappedPoints)
+                    {
+                        var localAnalyses = await _localDbService.GetAnalysisHistoryAsync(r.Id).ConfigureAwait(false);
+                        if (localAnalyses != null && localAnalyses.Count > 0)
+                        {
+                            r.WaterAnalyses = localAnalyses.Select(a => new WaterAnalysis
+                            {
+                                Id = a.Id,
+                                AnalysisDate = a.AnalysisDate,
+                                ResidualChlorine = a.ResidualChlorine,
+                                Ph = a.Ph,
+                                Turbidity = a.Turbidity,
+                                EColiAbsent = a.EColiAbsent,
+                                ReservoirId = a.ReservoirId
+                            }).ToList();
+                        }
+                    }
+
+                    _allPoints = mappedPoints;
+                    FilterPoints();
+                }
+
+                // 2. Se houver rede, busca na API de forma transparente para atualizar o cache local e a tela
+                if (Connectivity.NetworkAccess == NetworkAccess.Internet)
+                {
+                    var data = await _apiService.GetReservoirsAsync().ConfigureAwait(false);
+                    if (data != null)
+                    {
+                        _allPoints = data;
+                        FilterPoints();
+
+                        // Salva os reservatórios na base SQLite
+                        var localReservoirs = data.Select(r => new Models.LocalReservoir
+                        {
+                            Id = r.Id,
+                            Name = r.Name,
+                            Latitude = r.Latitude,
+                            Longitude = r.Longitude
+                        }).ToList();
+
+                        await _localDbService.SaveReservoirsAsync(localReservoirs).ConfigureAwait(false);
+
+                        // Cacheia o histórico de análises de cada um deles localmente
+                        foreach (var r in data)
+                        {
+                            if (r.WaterAnalyses != null && r.WaterAnalyses.Count > 0)
+                            {
+                                var localAnalyses = r.WaterAnalyses.Select(a => new Models.LocalWaterAnalysis
+                                {
+                                    Id = a.Id,
+                                    AnalysisDate = a.AnalysisDate,
+                                    ResidualChlorine = a.ResidualChlorine,
+                                    Ph = a.Ph,
+                                    Turbidity = a.Turbidity,
+                                    EColiAbsent = a.EColiAbsent,
+                                    ReservoirId = a.ReservoirId,
+                                    IsPendingSync = false
+                                }).ToList();
+
+                                await _localDbService.SaveAnalysisHistoryAsync(r.Id, localAnalyses).ConfigureAwait(false);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar dados: {ex.Message}");
             }
             finally
             {

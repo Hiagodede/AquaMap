@@ -1,10 +1,14 @@
-﻿namespace AquaMap
+namespace AquaMap
 {
     public partial class App : Microsoft.Maui.Controls.Application
     {
-        public App()
+        private readonly Services.SyncService _syncService;
+
+        public App(Services.SyncService syncService)
         {
             InitializeComponent();
+            _syncService = syncService;
+            _syncService.StartMonitoring();
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
