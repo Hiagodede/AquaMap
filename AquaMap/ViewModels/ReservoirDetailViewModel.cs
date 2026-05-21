@@ -76,30 +76,45 @@ namespace AquaMap.ViewModels
             LoadHistoryCommand = new Command(async () => await LoadHistoryAsync());
             EditReservoirCommand = new Command(async () =>
             {
-                await Shell.Current.GoToAsync($"ReservoirFormPage?ReservoirId={ReservoirId}&ReservoirName={Uri.EscapeDataString(ReservoirName)}");
+                if (IsBusy) return;
+                IsBusy = true;
+                try
+                {
+                    await Shell.Current.GoToAsync($"ReservoirFormPage?ReservoirId={ReservoirId}&ReservoirName={Uri.EscapeDataString(ReservoirName)}");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
             });
         }
 
         private async Task LoadHistoryAsync()
         {
-            if (ReservoirId <= 0) return;
+            if (ReservoirId <= 0 || IsBusy) return;
 
             IsBusy = true;
-            var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId);
-            AnalysisHistory.Clear();
-            WaterAnalysis? latest = null;
-            foreach (var item in data)
+            try
             {
-                AnalysisHistory.Add(item);
-                if (latest == null || item.AnalysisDate > latest.AnalysisDate)
+                var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId);
+                AnalysisHistory.Clear();
+                WaterAnalysis? latest = null;
+                foreach (var item in data)
                 {
-                    latest = item;
+                    AnalysisHistory.Add(item);
+                    if (latest == null || item.AnalysisDate > latest.AnalysisDate)
+                    {
+                        latest = item;
+                    }
                 }
+                LatestAnalysis = latest;
+                HasData = AnalysisHistory.Count > 0;
+                IsEmpty = !HasData;
             }
-            LatestAnalysis = latest;
-            HasData = AnalysisHistory.Count > 0;
-            IsEmpty = !HasData;
-            IsBusy = false;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

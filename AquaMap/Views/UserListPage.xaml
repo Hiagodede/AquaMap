@@ -57,7 +57,7 @@
                                     <Label Text="{Binding RoleLabel}" FontSize="11" TextColor="{StaticResource AquaPrimary}" FontAttributes="Bold" />
                                 </VerticalStackLayout>
                                 <!-- Delete -->
-                                <Button Grid.Column="2" Text="✕" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:UserListViewModel}}, Path=DeleteUserCommand, x:DataType=vm:UserListViewModel}" CommandParameter="{Binding .}" FontSize="14" TextColor="#EF4444" BackgroundColor="#FEE2E2" CornerRadius="10" WidthRequest="36" HeightRequest="36" Padding="0" VerticalOptions="Center" />
+                                <Button Grid.Column="2" Text="✕" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:UserListViewModel}}, Path=DeleteUserCommand, x:DataType=vm:UserListViewModel}" CommandParameter="{Binding .}" FontSize="14" TextColor="#EF4444" BackgroundColor="#FEE2E2" CornerRadius="12" WidthRequest="44" HeightRequest="44" Padding="0" VerticalOptions="Center" />
                             </Grid>
                         </Border>
                     </DataTemplate>

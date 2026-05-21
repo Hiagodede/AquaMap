@@ -61,12 +61,29 @@ namespace AquaMap.ViewModels
             LoadPointsCommand = new Command(async () => await LoadDataAsync());
             OpenDetailCommand = new Command<Reservoir>(async (r) =>
             {
-                if (r != null)
+                if (r == null || IsBusy) return;
+                IsBusy = true;
+                try
+                {
                     await Shell.Current.GoToAsync($"ReservoirDetailPage?ReservoirId={r.Id}&ReservoirName={Uri.EscapeDataString(r.Name)}");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
             });
             AddReservoirCommand = new Command(async () =>
             {
-                await Shell.Current.GoToAsync("ReservoirFormPage");
+                if (IsBusy) return;
+                IsBusy = true;
+                try
+                {
+                    await Shell.Current.GoToAsync("ReservoirFormPage");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
             });
         }
 

@@ -57,7 +57,6 @@
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Save Button -->
             <Button Text="Salvar" Command="{Binding SaveCommand}" IsEnabled="{Binding IsNotBusy}" FontSize="16" FontAttributes="Bold" HeightRequest="52" CornerRadius="14" TextColor="White" Margin="0,4,0,0">
                 <Button.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -66,6 +65,12 @@
                     </LinearGradientBrush>
                 </Button.Background>
                 <Button.Shadow><Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.35" /></Button.Shadow>
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsBusy}" Value="True">
+                        <Setter Property="Text" Value="Salvando..." />
+                        <Setter Property="Opacity" Value="0.6" />
+                    </DataTrigger>
+                </Button.Triggers>
             </Button>
 
             <!-- Delete Button (only in edit mode) -->

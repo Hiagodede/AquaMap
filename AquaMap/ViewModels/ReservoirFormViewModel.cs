@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -27,7 +28,12 @@ namespace AquaMap.ViewModels
         public string ReservoirName
         {
             get => _reservoirName;
-            set { _reservoirName = value; OnPropertyChanged(); }
+            set 
+            { 
+                _reservoirName = value; 
+                OnPropertyChanged(); 
+                SaveDraft();
+            }
         }
 
         private string _reservoirLatitude = string.Empty;
@@ -44,6 +50,7 @@ namespace AquaMap.ViewModels
                 _reservoirLatitude = SanitizeCoordinate(value ?? "");
                 OnPropertyChanged();
                 _isFormattingCoord = false;
+                SaveDraft();
             }
         }
 
@@ -57,6 +64,7 @@ namespace AquaMap.ViewModels
                 _reservoirLongitude = SanitizeCoordinate(value ?? "");
                 OnPropertyChanged();
                 _isFormattingCoord = false;
+                SaveDraft();
             }
         }
 
@@ -141,8 +149,80 @@ namespace AquaMap.ViewModels
             DeleteCommand = new Command(async () => await DeleteAsync());
         }
 
+        public void InitializeForm()
+        {
+            if (IsEditing)
+            {
+                _ = LoadCoordinatesIfNeededAsync();
+            }
+            else
+            {
+                LoadDraft();
+            }
+        }
+
+        private void SaveDraft()
+        {
+            if (IsEditing) return;
+            Preferences.Default.Set("Draft_Reservoir_Name", ReservoirName);
+            Preferences.Default.Set("Draft_Reservoir_Latitude", ReservoirLatitude);
+            Preferences.Default.Set("Draft_Reservoir_Longitude", ReservoirLongitude);
+        }
+
+        private void LoadDraft()
+        {
+            if (IsEditing) return;
+            _reservoirName = Preferences.Default.Get("Draft_Reservoir_Name", string.Empty);
+            _reservoirLatitude = Preferences.Default.Get("Draft_Reservoir_Latitude", string.Empty);
+            _reservoirLongitude = Preferences.Default.Get("Draft_Reservoir_Longitude", string.Empty);
+            OnPropertyChanged(nameof(ReservoirName));
+            OnPropertyChanged(nameof(ReservoirLatitude));
+            OnPropertyChanged(nameof(ReservoirLongitude));
+        }
+
+        private void ClearDraft()
+        {
+            Preferences.Default.Remove("Draft_Reservoir_Name");
+            Preferences.Default.Remove("Draft_Reservoir_Latitude");
+            Preferences.Default.Remove("Draft_Reservoir_Longitude");
+        }
+
+        private async Task LoadCoordinatesIfNeededAsync()
+        {
+            if (ReservoirId <= 0) return;
+            if (string.IsNullOrWhiteSpace(ReservoirLatitude) || string.IsNullOrWhiteSpace(ReservoirLongitude) ||
+                ReservoirLatitude == "0" || ReservoirLongitude == "0")
+            {
+                IsBusy = true;
+                try
+                {
+                    var reservoirs = await _apiService.GetReservoirsAsync();
+                    var res = reservoirs.FirstOrDefault(r => r.Id == ReservoirId);
+                    if (res != null)
+                    {
+                        _isFormattingCoord = true;
+                        ReservoirLatitude = res.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        ReservoirLongitude = res.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        _isFormattingCoord = false;
+                        OnPropertyChanged(nameof(ReservoirLatitude));
+                        OnPropertyChanged(nameof(ReservoirLongitude));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erro ao carregar coordenadas: {ex.Message}");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            }
+        }
+
         private async Task SaveAsync()
         {
+            if (IsBusy) return;
+
             if (string.IsNullOrWhiteSpace(ReservoirName))
             {
                 IsSuccess = false;
@@ -169,35 +249,46 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             StatusMessage = string.Empty;
 
-            bool success;
-            if (IsEditing)
+            try
             {
-                success = await _apiService.UpdateReservoirAsync(ReservoirId, ReservoirName, lat, lon, token);
-            }
-            else
-            {
-                success = await _apiService.CreateReservoirAsync(ReservoirName, lat, lon, token);
-            }
+                bool success;
+                if (IsEditing)
+                {
+                    success = await _apiService.UpdateReservoirAsync(ReservoirId, ReservoirName, lat, lon, token);
+                }
+                else
+                {
+                    success = await _apiService.CreateReservoirAsync(ReservoirName, lat, lon, token);
+                }
 
-            if (success)
-            {
-                IsSuccess = true;
-                StatusMessage = IsEditing ? "Reservatório atualizado!" : "Reservatório cadastrado!";
-                await Task.Delay(1000);
-                await Shell.Current.GoToAsync("..");
+                if (success)
+                {
+                    IsSuccess = true;
+                    StatusMessage = IsEditing ? "Reservatório atualizado!" : "Reservatório cadastrado!";
+                    ClearDraft();
+                    await Task.Delay(1000);
+                    await Shell.Current.GoToAsync("..");
+                }
+                else
+                {
+                    IsSuccess = false;
+                    StatusMessage = "Erro ao salvar. Verifique conexão e permissões.";
+                }
             }
-            else
+            catch (Exception ex)
             {
                 IsSuccess = false;
-                StatusMessage = "Erro ao salvar. Verifique conexão e permissões.";
+                StatusMessage = $"Erro de conexão: {ex.Message}";
             }
-
-            IsBusy = false;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task DeleteAsync()
         {
-            if (!IsEditing) return;
+            if (!IsEditing || IsBusy) return;
 
             bool confirm = await Shell.Current.DisplayAlert("Confirmar", $"Excluir '{ReservoirName}'?", "Sim", "Cancelar");
             if (!confirm) return;
@@ -206,17 +297,28 @@ namespace AquaMap.ViewModels
             if (string.IsNullOrEmpty(token)) return;
 
             IsBusy = true;
-            var success = await _apiService.DeleteReservoirAsync(ReservoirId, token);
-            if (success)
+            try
             {
-                await Shell.Current.GoToAsync("..");
+                var success = await _apiService.DeleteReservoirAsync(ReservoirId, token);
+                if (success)
+                {
+                    await Shell.Current.GoToAsync("..");
+                }
+                else
+                {
+                    IsSuccess = false;
+                    StatusMessage = "Erro ao excluir reservatório.";
+                }
             }
-            else
+            catch (Exception ex)
             {
                 IsSuccess = false;
-                StatusMessage = "Erro ao excluir reservatório.";
+                StatusMessage = $"Erro de conexão: {ex.Message}";
             }
-            IsBusy = false;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

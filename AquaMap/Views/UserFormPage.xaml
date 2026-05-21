@@ -3,10 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AquaMap.ViewModels"
              xmlns:behaviors="clr-namespace:AquaMap.Behaviors"
+             xmlns:converters="clr-namespace:AquaMap.Converters"
              x:Class="AquaMap.Views.UserFormPage"
              x:DataType="vm:UserFormViewModel"
              Title="Novo Técnico"
              BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <ScrollView>
         <VerticalStackLayout Spacing="16" Padding="20,16">
@@ -36,6 +43,7 @@
                         <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
                             <Entry Placeholder="Ex: João da Silva" Text="{Binding FullName}" MaxLength="100" FontSize="15" />
                         </Border>
+                        <Label Text="{Binding FullNameWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsFullNameValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
@@ -47,6 +55,7 @@
                                 </Entry.Behaviors>
                             </Entry>
                         </Border>
+                        <Label Text="{Binding TaxIdWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsTaxIdValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
                 </VerticalStackLayout>
             </Border>
@@ -62,6 +71,7 @@
                         <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
                             <Entry Placeholder="email@exemplo.com" Text="{Binding Email}" Keyboard="Email" MaxLength="100" FontSize="15" />
                         </Border>
+                        <Label Text="{Binding EmailWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsEmailValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
@@ -69,6 +79,7 @@
                         <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
                             <Entry Placeholder="(28) 99999-9999" Text="{Binding Phone}" Keyboard="Telephone" MaxLength="15" FontSize="15" />
                         </Border>
+                        <Label Text="{Binding PhoneWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsPhoneValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
                 </VerticalStackLayout>
             </Border>
@@ -84,6 +95,7 @@
                         <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
                             <Entry Placeholder="Mínimo 6 caracteres" Text="{Binding Password}" IsPassword="True" MaxLength="30" FontSize="15" />
                         </Border>
+                        <Label Text="{Binding PasswordWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsPasswordValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
 
                     <Grid ColumnDefinitions="*, Auto">
@@ -105,6 +117,12 @@
                     </LinearGradientBrush>
                 </Button.Background>
                 <Button.Shadow><Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.35" /></Button.Shadow>
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsBusy}" Value="True">
+                        <Setter Property="Text" Value="Carregando..." />
+                        <Setter Property="Opacity" Value="0.6" />
+                    </DataTrigger>
+                </Button.Triggers>
             </Button>
 
             <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource AquaPrimary}" HorizontalOptions="Center" />

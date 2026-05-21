@@ -3,11 +3,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AquaMap.ViewModels"
              xmlns:behaviors="clr-namespace:AquaMap.Behaviors"
+             xmlns:converters="clr-namespace:AquaMap.Converters"
              x:Class="AquaMap.Views.LoginPage"
              x:DataType="vm:LoginViewModel"
              Title="Acesso Técnico"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <ContentPage.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0.3,1">
@@ -67,8 +74,7 @@
                            FontSize="13"
                            TextColor="{StaticResource TextSecondary}"
                            HorizontalOptions="Center"
-                           HorizontalTextAlignment="Center"
-                           Margin="0,0,0,8" />
+                           HorizontalTextAlignment="Center" />
 
                     <!-- CPF Field -->
                     <VerticalStackLayout Spacing="6">
@@ -93,8 +99,9 @@
                                 </Entry.Behaviors>
                             </Entry>
                         </Border>
+                        <Label Text="{Binding TaxIdWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsTaxIdValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
-
+ 
                     <!-- Password Field -->
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Senha"
@@ -118,8 +125,8 @@
                                        PlaceholderColor="{StaticResource TextMuted}" />
                                 <Button Grid.Column="1"
                                         Command="{Binding TogglePasswordCommand}"
-                                        WidthRequest="50"
-                                        HeightRequest="40"
+                                        WidthRequest="55"
+                                        HeightRequest="44"
                                         VerticalOptions="Center"
                                         BackgroundColor="Transparent"
                                         FontSize="13"
@@ -135,8 +142,9 @@
                                 </Button>
                             </Grid>
                         </Border>
+                        <Label Text="{Binding PasswordWarning}" TextColor="#EF4444" FontSize="11" Margin="4,0,0,0" IsVisible="{Binding IsPasswordValid, Converter={StaticResource InverseBoolConverter}}" />
                     </VerticalStackLayout>
-
+ 
                     <!-- Login Button -->
                     <Button Text="Entrar"
                             Command="{Binding LoginCommand}"
@@ -156,8 +164,14 @@
                         <Button.Shadow>
                             <Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.4" />
                         </Button.Shadow>
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsBusy}" Value="True">
+                                <Setter Property="Text" Value="Carregando..." />
+                                <Setter Property="Opacity" Value="0.6" />
+                            </DataTrigger>
+                        </Button.Triggers>
                     </Button>
-
+ 
                     <!-- Loading -->
                     <ActivityIndicator IsRunning="{Binding IsBusy}"
                                        IsVisible="{Binding IsBusy}"

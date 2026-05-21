@@ -44,30 +44,49 @@ namespace AquaMap.ViewModels
         {
             _apiService = apiService;
             LoadUsersCommand = new Command(async () => await LoadUsersAsync());
-            AddUserCommand = new Command(async () => await Shell.Current.GoToAsync("UserFormPage"));
+            AddUserCommand = new Command(async () => 
+            {
+                if (IsBusy) return;
+                IsBusy = true;
+                try
+                {
+                    await Shell.Current.GoToAsync("UserFormPage");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            });
             DeleteUserCommand = new Command<UserDto>(async (user) => await DeleteUserAsync(user));
         }
 
         public async Task LoadUsersAsync()
         {
+            if (IsBusy) return;
             var token = await SecureStorage.Default.GetAsync("jwt_token");
             if (string.IsNullOrEmpty(token)) return;
 
             IsBusy = true;
-            var data = await _apiService.GetUsersAsync(token);
-            Users.Clear();
-            foreach (var user in data)
+            try
             {
-                Users.Add(user);
+                var data = await _apiService.GetUsersAsync(token);
+                Users.Clear();
+                foreach (var user in data)
+                {
+                    Users.Add(user);
+                }
+                HasData = Users.Count > 0;
+                IsEmpty = !HasData;
             }
-            HasData = Users.Count > 0;
-            IsEmpty = !HasData;
-            IsBusy = false;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task DeleteUserAsync(UserDto? user)
         {
-            if (user == null) return;
+            if (user == null || IsBusy) return;
 
             bool confirm = await Shell.Current.DisplayAlert("Confirmar", $"Excluir '{user.FullName}'?", "Sim", "Cancelar");
             if (!confirm) return;
@@ -75,12 +94,20 @@ namespace AquaMap.ViewModels
             var token = await SecureStorage.Default.GetAsync("jwt_token");
             if (string.IsNullOrEmpty(token)) return;
 
-            var success = await _apiService.DeleteUserAsync(user.Id, token);
-            if (success)
+            IsBusy = true;
+            try
             {
-                Users.Remove(user);
-                HasData = Users.Count > 0;
-                IsEmpty = !HasData;
+                var success = await _apiService.DeleteUserAsync(user.Id, token);
+                if (success)
+                {
+                    Users.Remove(user);
+                    HasData = Users.Count > 0;
+                    IsEmpty = !HasData;
+                }
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 

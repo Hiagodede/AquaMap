@@ -56,6 +56,8 @@ namespace AquaMap.Views
         }
 
 #if ANDROID
+        private Microsoft.Maui.Controls.Maps.Map? _nativeMap;
+
         private void AddNativeMap(double lat, double lon)
         {
             // Esconde o WebView no Android e mostra o mapa nativo
@@ -63,29 +65,32 @@ namespace AquaMap.Views
 
             var grid = (Grid)Content;
 
-            var nativeMap = new Microsoft.Maui.Controls.Maps.Map
+            if (_nativeMap == null)
             {
-                ItemsSource = _viewModel.NativePins,
-                ItemTemplate = new DataTemplate(() =>
+                _nativeMap = new Microsoft.Maui.Controls.Maps.Map
                 {
-                    var pin = new AquaMap.Controls.CustomPin();
-                    pin.SetBinding(AquaMap.Controls.CustomPin.LocationProperty, "Location");
-                    pin.SetBinding(AquaMap.Controls.CustomPin.AddressProperty, "Address");
-                    pin.SetBinding(AquaMap.Controls.CustomPin.LabelProperty, "Label");
-                    pin.SetBinding(AquaMap.Controls.CustomPin.TypeProperty, "Type");
-                    pin.SetBinding(AquaMap.Controls.CustomPin.PinColorProperty, "PinColor");
-                    pin.SetBinding(AquaMap.Controls.CustomPin.ReservoirIdProperty, "ReservoirId");
-                    pin.InfoWindowClicked += OnInfoWindowClicked;
-                    return pin;
-                })
-            };
+                    ItemsSource = _viewModel.NativePins,
+                    ItemTemplate = new DataTemplate(() =>
+                    {
+                        var pin = new AquaMap.Controls.CustomPin();
+                        pin.SetBinding(AquaMap.Controls.CustomPin.LocationProperty, "Location");
+                        pin.SetBinding(AquaMap.Controls.CustomPin.AddressProperty, "Address");
+                        pin.SetBinding(AquaMap.Controls.CustomPin.LabelProperty, "Label");
+                        pin.SetBinding(AquaMap.Controls.CustomPin.TypeProperty, "Type");
+                        pin.SetBinding(AquaMap.Controls.CustomPin.PinColorProperty, "PinColor");
+                        pin.SetBinding(AquaMap.Controls.CustomPin.ReservoirIdProperty, "ReservoirId");
+                        pin.InfoWindowClicked += OnInfoWindowClicked;
+                        return pin;
+                    })
+                };
+
+                // Insere o mapa no início do Grid (atrás dos overlays)
+                grid.Children.Insert(0, _nativeMap);
+            }
 
             var mapSpan = new Microsoft.Maui.Maps.MapSpan(
                 new Microsoft.Maui.Devices.Sensors.Location(lat, lon), 0.05, 0.05);
-            nativeMap.MoveToRegion(mapSpan);
-
-            // Insere o mapa no início do Grid (atrás dos overlays)
-            grid.Children.Insert(0, nativeMap);
+            _nativeMap.MoveToRegion(mapSpan);
         }
 
         private async void OnInfoWindowClicked(object? sender, EventArgs e)

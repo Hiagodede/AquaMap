@@ -21,10 +21,10 @@ namespace AquaMap.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync("/reservoirs");
+                var response = await _httpClient.GetAsync("/reservoirs").ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<List<Reservoir>>() ?? new List<Reservoir>();
+                    return await response.Content.ReadFromJsonAsync<List<Reservoir>>().ConfigureAwait(false) ?? new List<Reservoir>();
                 }
                 return new List<Reservoir>();
             }
@@ -39,10 +39,10 @@ namespace AquaMap.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("/login", new { TaxId = taxId, Password = password });
+                var response = await _httpClient.PostAsJsonAsync("/login", new { TaxId = taxId, Password = password }).ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                    var result = await response.Content.ReadFromJsonAsync<LoginResponse>().ConfigureAwait(false);
                     return result?.Token;
                 }
                 return null;
@@ -62,7 +62,7 @@ namespace AquaMap.Services
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 request.Content = JsonContent.Create(analysis);
 
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -76,10 +76,10 @@ namespace AquaMap.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/water-analysis/{reservoirId}");
+                var response = await _httpClient.GetAsync($"/water-analysis/{reservoirId}").ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<List<WaterAnalysis>>() ?? new List<WaterAnalysis>();
+                    return await response.Content.ReadFromJsonAsync<List<WaterAnalysis>>().ConfigureAwait(false) ?? new List<WaterAnalysis>();
                 }
                 return new List<WaterAnalysis>();
             }
@@ -98,7 +98,7 @@ namespace AquaMap.Services
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 request.Content = JsonContent.Create(new { Name = name, Latitude = latitude, Longitude = longitude });
 
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -116,7 +116,7 @@ namespace AquaMap.Services
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 request.Content = JsonContent.Create(new { Name = name, Latitude = latitude, Longitude = longitude });
 
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -133,7 +133,7 @@ namespace AquaMap.Services
                 var request = new HttpRequestMessage(HttpMethod.Delete, $"/reservoirs/{id}");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -149,10 +149,10 @@ namespace AquaMap.Services
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, "/users");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<List<UserDto>>() ?? new List<UserDto>();
+                    return await response.Content.ReadFromJsonAsync<List<UserDto>>().ConfigureAwait(false) ?? new List<UserDto>();
                 }
                 return new List<UserDto>();
             }
@@ -170,7 +170,7 @@ namespace AquaMap.Services
                 var request = new HttpRequestMessage(HttpMethod.Post, "/users");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 request.Content = JsonContent.Create(userData);
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -186,7 +186,7 @@ namespace AquaMap.Services
             {
                 var request = new HttpRequestMessage(HttpMethod.Delete, $"/users/{id}");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)

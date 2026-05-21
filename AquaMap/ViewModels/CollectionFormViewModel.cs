@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -20,7 +21,12 @@ namespace AquaMap.ViewModels
         public Reservoir? SelectedReservoir
         {
             get => _selectedReservoir;
-            set { _selectedReservoir = value; OnPropertyChanged(); }
+            set 
+            { 
+                _selectedReservoir = value; 
+                OnPropertyChanged(); 
+                SaveDraft(); 
+            }
         }
 
         private string _residualChlorine = string.Empty;
@@ -31,25 +37,24 @@ namespace AquaMap.ViewModels
             {
                 _residualChlorine = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsChlorineValid));
-                OnPropertyChanged(nameof(ChlorineWarning));
+                SaveDraft();
+                _ = ValidateChlorineAsync();
             }
         }
 
+        private bool _isChlorineValid = true;
         public bool IsChlorineValid
         {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(ResidualChlorine)) return true;
-                if (double.TryParse(ResidualChlorine.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
-                {
-                    return val >= 0.2 && val <= 2.0;
-                }
-                return false;
-            }
+            get => _isChlorineValid;
+            set { _isChlorineValid = value; OnPropertyChanged(); }
         }
 
-        public string ChlorineWarning => IsChlorineValid ? string.Empty : "Ideal: 0.2 a 2.0 mg/L (Portaria 888)";
+        private string _chlorineWarning = string.Empty;
+        public string ChlorineWarning
+        {
+            get => _chlorineWarning;
+            set { _chlorineWarning = value; OnPropertyChanged(); }
+        }
 
         private string _ph = string.Empty;
         public string Ph
@@ -59,25 +64,24 @@ namespace AquaMap.ViewModels
             {
                 _ph = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsPhValid));
-                OnPropertyChanged(nameof(PhWarning));
+                SaveDraft();
+                _ = ValidatePhAsync();
             }
         }
 
+        private bool _isPhValid = true;
         public bool IsPhValid
         {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(Ph)) return true;
-                if (double.TryParse(Ph.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
-                {
-                    return val >= 6.0 && val <= 9.5;
-                }
-                return false;
-            }
+            get => _isPhValid;
+            set { _isPhValid = value; OnPropertyChanged(); }
         }
 
-        public string PhWarning => IsPhValid ? string.Empty : "Ideal: 6.0 a 9.5 (Portaria 888)";
+        private string _phWarning = string.Empty;
+        public string PhWarning
+        {
+            get => _phWarning;
+            set { _phWarning = value; OnPropertyChanged(); }
+        }
 
         private string _turbidity = string.Empty;
         public string Turbidity
@@ -87,31 +91,35 @@ namespace AquaMap.ViewModels
             {
                 _turbidity = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsTurbidityValid));
-                OnPropertyChanged(nameof(TurbidityWarning));
+                SaveDraft();
+                _ = ValidateTurbidityAsync();
             }
         }
 
+        private bool _isTurbidityValid = true;
         public bool IsTurbidityValid
         {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(Turbidity)) return true;
-                if (double.TryParse(Turbidity.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
-                {
-                    return val <= 5.0;
-                }
-                return false;
-            }
+            get => _isTurbidityValid;
+            set { _isTurbidityValid = value; OnPropertyChanged(); }
         }
 
-        public string TurbidityWarning => IsTurbidityValid ? string.Empty : "Ideal: ≤ 5.0 NTU (Portaria 888)";
+        private string _turbidityWarning = string.Empty;
+        public string TurbidityWarning
+        {
+            get => _turbidityWarning;
+            set { _turbidityWarning = value; OnPropertyChanged(); }
+        }
 
         private bool _eColiAbsent = true;
         public bool EColiAbsent
         {
             get => _eColiAbsent;
-            set { _eColiAbsent = value; OnPropertyChanged(); }
+            set 
+            { 
+                _eColiAbsent = value; 
+                OnPropertyChanged(); 
+                SaveDraft(); 
+            }
         }
 
         private bool _isBusy;
@@ -138,7 +146,6 @@ namespace AquaMap.ViewModels
 
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
 
-        // Mantido para compatibilidade, mas agora usamos IsSuccess + DataTriggers
         private string _statusColor = "Red";
         public string StatusColor
         {
@@ -157,27 +164,170 @@ namespace AquaMap.ViewModels
             SubmitCommand = new Command(async () => await SubmitAnalysisAsync());
             LoadReservoirsCommand = new Command(async () => await LoadReservoirsAsync());
             LogoutCommand = new Command(async () => await LogoutAsync());
-            ManageUsersCommand = new Command(async () => await Shell.Current.GoToAsync("UserListPage"));
+            ManageUsersCommand = new Command(async () => 
+            {
+                if (IsBusy) return;
+                IsBusy = true;
+                try
+                {
+                    await Shell.Current.GoToAsync("UserListPage");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            });
+            LoadDraft();
+        }
+
+        private void SaveDraft()
+        {
+            Preferences.Default.Set("Draft_Collection_ReservoirId", SelectedReservoir?.Id ?? -1);
+            Preferences.Default.Set("Draft_Collection_Chlorine", ResidualChlorine);
+            Preferences.Default.Set("Draft_Collection_Ph", Ph);
+            Preferences.Default.Set("Draft_Collection_Turbidity", Turbidity);
+            Preferences.Default.Set("Draft_Collection_EColiAbsent", EColiAbsent);
+        }
+
+        private void LoadDraft()
+        {
+            _residualChlorine = Preferences.Default.Get("Draft_Collection_Chlorine", string.Empty);
+            _ph = Preferences.Default.Get("Draft_Collection_Ph", string.Empty);
+            _turbidity = Preferences.Default.Get("Draft_Collection_Turbidity", string.Empty);
+            _eColiAbsent = Preferences.Default.Get("Draft_Collection_EColiAbsent", true);
+        }
+
+        private void ClearDraft()
+        {
+            Preferences.Default.Remove("Draft_Collection_ReservoirId");
+            Preferences.Default.Remove("Draft_Collection_Chlorine");
+            Preferences.Default.Remove("Draft_Collection_Ph");
+            Preferences.Default.Remove("Draft_Collection_Turbidity");
+            Preferences.Default.Remove("Draft_Collection_EColiAbsent");
+        }
+
+        private System.Threading.CancellationTokenSource? _chlorineCts;
+        private async Task ValidateChlorineAsync()
+        {
+            _chlorineCts?.Cancel();
+            _chlorineCts = new System.Threading.CancellationTokenSource();
+            try
+            {
+                await Task.Delay(500, _chlorineCts.Token);
+                if (string.IsNullOrWhiteSpace(ResidualChlorine))
+                {
+                    IsChlorineValid = true;
+                    ChlorineWarning = string.Empty;
+                }
+                else if (double.TryParse(ResidualChlorine.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    IsChlorineValid = val >= 0.2 && val <= 2.0;
+                    ChlorineWarning = IsChlorineValid ? string.Empty : "Ideal: 0.2 a 2.0 mg/L (Portaria 888)";
+                }
+                else
+                {
+                    IsChlorineValid = false;
+                    ChlorineWarning = "Valor inválido.";
+                }
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        private System.Threading.CancellationTokenSource? _phCts;
+        private async Task ValidatePhAsync()
+        {
+            _phCts?.Cancel();
+            _phCts = new System.Threading.CancellationTokenSource();
+            try
+            {
+                await Task.Delay(500, _phCts.Token);
+                if (string.IsNullOrWhiteSpace(Ph))
+                {
+                    IsPhValid = true;
+                    PhWarning = string.Empty;
+                }
+                else if (double.TryParse(Ph.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    IsPhValid = val >= 6.0 && val <= 9.5;
+                    PhWarning = IsPhValid ? string.Empty : "Ideal: 6.0 a 9.5 (Portaria 888)";
+                }
+                else
+                {
+                    IsPhValid = false;
+                    PhWarning = "Valor inválido.";
+                }
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        private System.Threading.CancellationTokenSource? _turbidityCts;
+        private async Task ValidateTurbidityAsync()
+        {
+            _turbidityCts?.Cancel();
+            _turbidityCts = new System.Threading.CancellationTokenSource();
+            try
+            {
+                await Task.Delay(500, _turbidityCts.Token);
+                if (string.IsNullOrWhiteSpace(Turbidity))
+                {
+                    IsTurbidityValid = true;
+                    TurbidityWarning = string.Empty;
+                }
+                else if (double.TryParse(Turbidity.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    IsTurbidityValid = val <= 5.0 && val >= 0.0;
+                    TurbidityWarning = IsTurbidityValid ? string.Empty : "Ideal: ≤ 5.0 NTU (Portaria 888)";
+                }
+                else
+                {
+                    IsTurbidityValid = false;
+                    TurbidityWarning = "Valor inválido.";
+                }
+            }
+            catch (OperationCanceledException) { }
         }
 
         private async Task LoadReservoirsAsync()
         {
+            if (IsBusy) return;
             IsBusy = true;
-            var data = await _apiService.GetReservoirsAsync();
-            Reservoirs.Clear();
-            foreach (var res in data)
+            try
             {
-                Reservoirs.Add(res);
+                var data = await _apiService.GetReservoirsAsync();
+                Reservoirs.Clear();
+                foreach (var res in data)
+                {
+                    Reservoirs.Add(res);
+                }
+
+                // Restore selected reservoir from draft
+                int savedId = Preferences.Default.Get("Draft_Collection_ReservoirId", -1);
+                if (savedId != -1)
+                {
+                    SelectedReservoir = Reservoirs.FirstOrDefault(r => r.Id == savedId);
+                }
             }
-            IsBusy = false;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task SubmitAnalysisAsync()
         {
+            if (IsBusy) return;
+
             if (SelectedReservoir == null)
             {
                 IsSuccess = false;
                 StatusMessage = "Selecione um reservatório.";
+                return;
+            }
+
+            if (!IsChlorineValid || !IsPhValid || !IsTurbidityValid)
+            {
+                IsSuccess = false;
+                StatusMessage = "Corrija os parâmetros fora do padrão antes de enviar.";
                 return;
             }
 
@@ -223,40 +373,79 @@ namespace AquaMap.ViewModels
                 return;
             }
 
-            var analysis = new WaterAnalysis
+            try
             {
-                AnalysisDate = DateTime.UtcNow, 
-                ResidualChlorine = chlorine, 
-                Ph = phVal, 
-                Turbidity = turbidityVal, 
-                EColiAbsent = EColiAbsent, 
-                ReservoirId = SelectedReservoir.Id
-            };
+                var analysis = new WaterAnalysis
+                {
+                    AnalysisDate = DateTime.UtcNow, 
+                    ResidualChlorine = chlorine, 
+                    Ph = phVal, 
+                    Turbidity = turbidityVal, 
+                    EColiAbsent = EColiAbsent, 
+                    ReservoirId = SelectedReservoir.Id
+                };
 
-            var success = await _apiService.SubmitWaterAnalysisAsync(analysis, token);
+                var success = await _apiService.SubmitWaterAnalysisAsync(analysis, token);
 
-            if (success)
-            {
-                IsSuccess = true;
-                StatusColor = "Green";
-                StatusMessage = "Análise salva com sucesso!";
-                // Limpar campos
-                ResidualChlorine = ""; Ph = ""; Turbidity = "";
+                if (success)
+                {
+                    IsSuccess = true;
+                    StatusColor = "Green";
+                    StatusMessage = "Análise salva com sucesso!";
+                    
+                    // Limpar campos e rascunho
+                    ClearDraft();
+                    _residualChlorine = ""; 
+                    _ph = ""; 
+                    _turbidity = "";
+                    _selectedReservoir = null;
+                    _eColiAbsent = true;
+                    OnPropertyChanged(nameof(ResidualChlorine));
+                    OnPropertyChanged(nameof(Ph));
+                    OnPropertyChanged(nameof(Turbidity));
+                    OnPropertyChanged(nameof(SelectedReservoir));
+                    OnPropertyChanged(nameof(EColiAbsent));
+
+                    // Reset warnings
+                    IsChlorineValid = true;
+                    ChlorineWarning = string.Empty;
+                    IsPhValid = true;
+                    PhWarning = string.Empty;
+                    IsTurbidityValid = true;
+                    TurbidityWarning = string.Empty;
+                }
+                else
+                {
+                    IsSuccess = false;
+                    StatusColor = "Red";
+                    StatusMessage = "Erro ao salvar análise. Verifique conexão e permissões.";
+                }
             }
-            else
+            catch (Exception ex)
             {
                 IsSuccess = false;
                 StatusColor = "Red";
-                StatusMessage = "Erro ao salvar análise. Verifique conexão e permissões.";
+                StatusMessage = $"Erro de conexão: {ex.Message}";
             }
-
-            IsBusy = false;
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task LogoutAsync()
         {
-            SecureStorage.Default.Remove("jwt_token");
-            await Shell.Current.GoToAsync("..");
+            if (IsBusy) return;
+            IsBusy = true;
+            try
+            {
+                SecureStorage.Default.Remove("jwt_token");
+                await Shell.Current.GoToAsync("..");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
