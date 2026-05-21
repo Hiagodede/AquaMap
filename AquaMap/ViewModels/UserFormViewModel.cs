@@ -12,7 +12,6 @@ namespace AquaMap.ViewModels
     public class UserFormViewModel : INotifyPropertyChanged
     {
         private readonly ApiService _apiService;
-        private bool _isFormattingCpf = false;
 
         private string _fullName = string.Empty;
         public string FullName
@@ -25,24 +24,10 @@ namespace AquaMap.ViewModels
         public string TaxId
         {
             get => _taxId;
-            set
-            {
-                if (_isFormattingCpf) { _taxId = value; return; }
-                string digits = new string((value ?? "").Where(char.IsDigit).ToArray());
-                if (digits.Length > 11) digits = digits.Substring(0, 11);
-
-                string formatted = digits;
-                if (digits.Length > 9)
-                    formatted = $"{digits.Substring(0, 3)}.{digits.Substring(3, 3)}.{digits.Substring(6, 3)}-{digits.Substring(9)}";
-                else if (digits.Length > 6)
-                    formatted = $"{digits.Substring(0, 3)}.{digits.Substring(3, 3)}.{digits.Substring(6)}";
-                else if (digits.Length > 3)
-                    formatted = $"{digits.Substring(0, 3)}.{digits.Substring(3)}";
-
-                _isFormattingCpf = true;
-                _taxId = formatted;
-                OnPropertyChanged();
-                _isFormattingCpf = false;
+            set 
+            { 
+                _taxId = value; 
+                OnPropertyChanged(); 
             }
         }
 

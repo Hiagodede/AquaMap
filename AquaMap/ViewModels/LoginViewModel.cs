@@ -17,35 +17,14 @@ namespace AquaMap.ViewModels
         private bool _isPasswordHidden = true;
         private bool _isBusy;
         private string _errorMessage = string.Empty;
-        private bool _isFormattingCpf = false;
 
         public string TaxId
         {
             get => _taxId;
-            set
-            {
-                if (_isFormattingCpf) { _taxId = value; return; }
-
-                // Extrai apenas dígitos
-                string digits = new string((value ?? "").Where(char.IsDigit).ToArray());
-
-                // Limita a 11 dígitos
-                if (digits.Length > 11)
-                    digits = digits.Substring(0, 11);
-
-                // Aplica a máscara 000.000.000-00
-                string formatted = digits;
-                if (digits.Length > 9)
-                    formatted = $"{digits.Substring(0, 3)}.{digits.Substring(3, 3)}.{digits.Substring(6, 3)}-{digits.Substring(9)}";
-                else if (digits.Length > 6)
-                    formatted = $"{digits.Substring(0, 3)}.{digits.Substring(3, 3)}.{digits.Substring(6)}";
-                else if (digits.Length > 3)
-                    formatted = $"{digits.Substring(0, 3)}.{digits.Substring(3)}";
-
-                _isFormattingCpf = true;
-                _taxId = formatted;
-                OnPropertyChanged();
-                _isFormattingCpf = false;
+            set 
+            { 
+                _taxId = value; 
+                OnPropertyChanged(); 
             }
         }
 

@@ -71,7 +71,7 @@ namespace AquaMap
 
             // --- INJEÇÃO DA URL SEM HARDCODING ---
             var apiSettings = builder.Configuration.GetSection("ApiSettings");
-            string baseUrl = apiSettings["BaseUrl"] ?? "";
+            string? baseUrl = apiSettings["BaseUrl"];
 
 #if DEBUG
             // Em desenvolvimento local, puxamos os IPs corretos baseados no emulador/sistema
@@ -79,6 +79,11 @@ namespace AquaMap
                 ? apiSettings["BaseUrlAndroid"] 
                 : apiSettings["BaseUrlWindows"];
 #endif
+
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                throw new InvalidOperationException("A URL base da API não foi configurada nas configurações do aplicativo (appsettings.json).");
+            }
 
             // --- REGISTRAR SERVIÇOS DE API ---
             builder.Services.AddSingleton(new ApiService(new System.Net.Http.HttpClient { BaseAddress = new System.Uri(baseUrl) }));
