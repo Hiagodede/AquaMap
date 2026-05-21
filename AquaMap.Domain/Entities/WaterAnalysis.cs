@@ -17,6 +17,11 @@ namespace AquaMap.Domain.Entities
         public int ReservoirId { get; set; }
         public Reservoir Reservoir { get; set; } = null!;
 
+        // Validações individuais para destaque na UI
+        public bool IsChlorineValid => ResidualChlorine >= 0.2 && ResidualChlorine <= 2.0;
+        public bool IsPhValid => Ph >= 6.0 && Ph <= 9.5;
+        public bool IsTurbidityValid => Turbidity <= 5.0;
+
         // Cálculo de Potabilidade encapsulado
         public bool IsPotable => 
             ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0 &&

@@ -27,22 +27,85 @@ namespace AquaMap.ViewModels
         public string ResidualChlorine
         {
             get => _residualChlorine;
-            set { _residualChlorine = value; OnPropertyChanged(); }
+            set
+            {
+                _residualChlorine = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsChlorineValid));
+                OnPropertyChanged(nameof(ChlorineWarning));
+            }
         }
+
+        public bool IsChlorineValid
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(ResidualChlorine)) return true;
+                if (double.TryParse(ResidualChlorine.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    return val >= 0.2 && val <= 2.0;
+                }
+                return false;
+            }
+        }
+
+        public string ChlorineWarning => IsChlorineValid ? string.Empty : "Ideal: 0.2 a 2.0 mg/L (Portaria 888)";
 
         private string _ph = string.Empty;
         public string Ph
         {
             get => _ph;
-            set { _ph = value; OnPropertyChanged(); }
+            set
+            {
+                _ph = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsPhValid));
+                OnPropertyChanged(nameof(PhWarning));
+            }
         }
+
+        public bool IsPhValid
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(Ph)) return true;
+                if (double.TryParse(Ph.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    return val >= 6.0 && val <= 9.5;
+                }
+                return false;
+            }
+        }
+
+        public string PhWarning => IsPhValid ? string.Empty : "Ideal: 6.0 a 9.5 (Portaria 888)";
 
         private string _turbidity = string.Empty;
         public string Turbidity
         {
             get => _turbidity;
-            set { _turbidity = value; OnPropertyChanged(); }
+            set
+            {
+                _turbidity = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsTurbidityValid));
+                OnPropertyChanged(nameof(TurbidityWarning));
+            }
         }
+
+        public bool IsTurbidityValid
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(Turbidity)) return true;
+                if (double.TryParse(Turbidity.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    return val <= 5.0;
+                }
+                return false;
+            }
+        }
+
+        public string TurbidityWarning => IsTurbidityValid ? string.Empty : "Ideal: ≤ 5.0 NTU (Portaria 888)";
 
         private bool _eColiAbsent = true;
         public bool EColiAbsent
@@ -123,7 +186,28 @@ namespace AquaMap.ViewModels
                 !double.TryParse(Turbidity?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double turbidityVal))
             {
                 IsSuccess = false;
-                StatusMessage = "Valores químicos inválidos.";
+                StatusMessage = "Os parâmetros devem ser valores numéricos válidos.";
+                return;
+            }
+
+            if (chlorine < 0)
+            {
+                IsSuccess = false;
+                StatusMessage = "O cloro residual não pode ser negativo.";
+                return;
+            }
+
+            if (phVal < 0 || phVal > 14)
+            {
+                IsSuccess = false;
+                StatusMessage = "O pH deve ser um valor entre 0.0 e 14.0.";
+                return;
+            }
+
+            if (turbidityVal < 0)
+            {
+                IsSuccess = false;
+                StatusMessage = "A turbidez não pode ser negativa.";
                 return;
             }
 

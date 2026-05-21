@@ -8,7 +8,7 @@
              Title="Reservatórios"
              BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
 
-    <Grid RowDefinitions="Auto, *">
+    <Grid RowDefinitions="Auto, Auto, *">
 
         <!-- Header -->
         <Border Grid.Row="0" StrokeShape="RoundRectangle 0,0,20,20" Stroke="Transparent" Padding="24,20,24,18">
@@ -31,8 +31,31 @@
             </Grid>
         </Border>
 
+        <!-- Search Bar -->
+        <Border Grid.Row="1"
+                Margin="16,12,16,4"
+                StrokeShape="RoundRectangle 12"
+                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}"
+                Padding="12,2"
+                HeightRequest="46">
+            <Border.Shadow>
+                <Shadow Brush="#000" Offset="0,2" Radius="6" Opacity="0.04" />
+            </Border.Shadow>
+            <Grid ColumnDefinitions="Auto, *">
+                <Label Text="🔍" FontSize="14" VerticalOptions="Center" Margin="4,0,8,0" />
+                <Entry Grid.Column="1"
+                       Placeholder="Buscar reservatório..."
+                       Text="{Binding SearchText}"
+                       FontSize="14"
+                       VerticalOptions="Center"
+                       TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                       PlaceholderColor="{StaticResource TextMuted}" />
+            </Grid>
+        </Border>
+
         <!-- Content -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <!-- Loading -->
             <VerticalStackLayout IsVisible="{Binding IsBusy}" VerticalOptions="Center" HorizontalOptions="Center" Spacing="12">
                 <ActivityIndicator IsRunning="{Binding IsBusy}" Color="{StaticResource AquaPrimary}" HeightRequest="40" WidthRequest="40" />
@@ -51,50 +74,64 @@
                 <CollectionView ItemsSource="{Binding Points}" Margin="16,12,16,8">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:Reservoir">
-                            <Border Margin="0,6" Padding="16,14" StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}">
+                            <Border Margin="0,6" StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="0">
                                 <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=OpenDetailCommand}" CommandParameter="{Binding .}" />
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=OpenDetailCommand, x:DataType=vm:MainViewModel}" CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
                                 <Border.Shadow>
                                     <Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.06" />
                                 </Border.Shadow>
-                                <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
-                                    <!-- Status Icon -->
-                                    <Border Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="RoundRectangle 12" Stroke="Transparent" VerticalOptions="Center" BackgroundColor="#F1F5F9">
-                                        <Border.Triggers>
-                                            <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Green"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
-                                            <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Red"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>
-                                        </Border.Triggers>
-                                        <Label HorizontalOptions="Center" VerticalOptions="Center" FontSize="18" Text="—" TextColor="#94A3B8">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Green"><Setter Property="Text" Value="✓" /><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
-                                                <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Red"><Setter Property="Text" Value="✕" /><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                    </Border>
-                                    <!-- Info -->
-                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
-                                        <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" LineBreakMode="TailTruncation" />
-                                        <Label FontSize="12" TextColor="{StaticResource TextMuted}" Text="Aguardando análise">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Green"><Setter Property="Text" Value="Água potável — Portaria 888" /></DataTrigger>
-                                                <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Red"><Setter Property="Text" Value="Parâmetros fora do padrão" /></DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                    </VerticalStackLayout>
-                                    <!-- Badge -->
-                                    <Border Grid.Column="2" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="10,5" VerticalOptions="Center" BackgroundColor="#F1F5F9">
-                                        <Border.Triggers>
-                                            <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Green"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
-                                            <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Red"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>
-                                        </Border.Triggers>
-                                        <Label FontSize="11" FontAttributes="Bold" Text="N/A" TextColor="#94A3B8">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Green"><Setter Property="Text" Value="Potável" /><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
-                                                <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Red"><Setter Property="Text" Value="Alerta" /><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                    </Border>
+                                <Grid ColumnDefinitions="6, *" IsClippedToBounds="True">
+                                    <!-- Left colored strip indicator -->
+                                    <BoxView Grid.Column="0" WidthRequest="6" VerticalOptions="FillAndExpand" Color="#94A3B8">
+                                        <BoxView.Triggers>
+                                            <DataTrigger TargetType="BoxView" Binding="{Binding StatusColor}" Value="Green">
+                                                <Setter Property="Color" Value="#10B981" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="BoxView" Binding="{Binding StatusColor}" Value="Red">
+                                                <Setter Property="Color" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </BoxView.Triggers>
+                                    </BoxView>
+                                    <!-- Inner content -->
+                                    <Grid Grid.Column="1" ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14" Padding="16,14">
+                                        <!-- Status Icon -->
+                                        <Border Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="RoundRectangle 12" Stroke="Transparent" VerticalOptions="Center" BackgroundColor="#F1F5F9">
+                                            <Border.Triggers>
+                                                <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Green"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
+                                                <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Red"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>
+                                            </Border.Triggers>
+                                            <Label HorizontalOptions="Center" VerticalOptions="Center" FontSize="18" Text="—" TextColor="#94A3B8">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Green"><Setter Property="Text" Value="✓" /><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Red"><Setter Property="Text" Value="✕" /><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                        </Border>
+                                        <!-- Info -->
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                                            <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" LineBreakMode="TailTruncation" />
+                                            <Label FontSize="12" TextColor="{StaticResource TextMuted}" Text="Aguardando análise">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Green"><Setter Property="Text" Value="Água potável — Portaria 888" /></DataTrigger>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Red"><Setter Property="Text" Value="Parâmetros fora do padrão" /></DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                        </VerticalStackLayout>
+                                        <!-- Badge -->
+                                        <Border Grid.Column="2" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="10,5" VerticalOptions="Center" BackgroundColor="#F1F5F9">
+                                            <Border.Triggers>
+                                                <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Green"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
+                                                <DataTrigger TargetType="Border" Binding="{Binding StatusColor}" Value="Red"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>
+                                            </Border.Triggers>
+                                            <Label FontSize="11" FontAttributes="Bold" Text="N/A" TextColor="#94A3B8">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Green"><Setter Property="Text" Value="Potável" /><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding StatusColor}" Value="Red"><Setter Property="Text" Value="Alerta" /><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                        </Border>
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </DataTemplate>

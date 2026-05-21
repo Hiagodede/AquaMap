@@ -50,6 +50,7 @@ namespace AquaMap.ViewModels
 
                     NativePins.Add(new AquaMap.Controls.CustomPin
                     {
+                        ReservoirId = reservoir.Id,
                         Label = reservoir.Name,
                         Address = $"Última Situação: {(reservoir.StatusColor == "Green" ? "Própria" : "Imprópria")}",
                         Type = Microsoft.Maui.Controls.Maps.PinType.Place,

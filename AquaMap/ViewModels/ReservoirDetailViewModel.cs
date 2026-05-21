@@ -32,6 +32,20 @@ namespace AquaMap.ViewModels
             set { _reservoirName = value; OnPropertyChanged(); }
         }
 
+        private WaterAnalysis? _latestAnalysis;
+        public WaterAnalysis? LatestAnalysis
+        {
+            get => _latestAnalysis;
+            set 
+            { 
+                _latestAnalysis = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(HasLatestAnalysis));
+            }
+        }
+
+        public bool HasLatestAnalysis => LatestAnalysis != null;
+
         private bool _isBusy;
         public bool IsBusy
         {
@@ -73,10 +87,16 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId);
             AnalysisHistory.Clear();
+            WaterAnalysis? latest = null;
             foreach (var item in data)
             {
                 AnalysisHistory.Add(item);
+                if (latest == null || item.AnalysisDate > latest.AnalysisDate)
+                {
+                    latest = item;
+                }
             }
+            LatestAnalysis = latest;
             HasData = AnalysisHistory.Count > 0;
             IsEmpty = !HasData;
             IsBusy = false;

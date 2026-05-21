@@ -14,5 +14,14 @@ namespace AquaMap.Controls
             get => (Color)GetValue(PinColorProperty);
             set => SetValue(PinColorProperty, value);
         }
+
+        public static readonly BindableProperty ReservoirIdProperty =
+            BindableProperty.Create(nameof(ReservoirId), typeof(int), typeof(CustomPin), 0);
+
+        public int ReservoirId
+        {
+            get => (int)GetValue(ReservoirIdProperty);
+            set => SetValue(ReservoirIdProperty, value);
+        }
     }
 }

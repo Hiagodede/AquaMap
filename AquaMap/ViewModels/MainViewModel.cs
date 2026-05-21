@@ -12,9 +12,25 @@ namespace AquaMap.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly Services.ApiService _apiService;
+        private System.Collections.Generic.List<Reservoir> _allPoints = new();
+        private string _searchText = string.Empty;
 
         // Lista que a tela vai "vigiar" para mostrar os itens
         public ObservableCollection<Reservoir> Points { get; set; } = new();
+
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    OnPropertyChanged();
+                    FilterPoints();
+                }
+            }
+        }
 
         private bool _isBusy;
         public bool IsBusy
@@ -63,12 +79,8 @@ namespace AquaMap.ViewModels
             try
             {
                 var data = await _apiService.GetReservoirsAsync();
-
-                Points.Clear();
-                foreach (var point in data)
-                {
-                    Points.Add(point);
-                }
+                _allPoints = data ?? new System.Collections.Generic.List<Reservoir>();
+                FilterPoints();
             }
             finally
             {
@@ -77,6 +89,21 @@ namespace AquaMap.ViewModels
                 OnPropertyChanged(nameof(IsEmpty));
                 OnPropertyChanged(nameof(HasData));
             }
+        }
+
+        private void FilterPoints()
+        {
+            Points.Clear();
+            var filtered = string.IsNullOrWhiteSpace(SearchText)
+                ? _allPoints
+                : _allPoints.Where(p => p.Name != null && p.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var p in filtered)
+            {
+                Points.Add(p);
+            }
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(HasData));
         }
 
         // Boilerplate do MVVM (padrão para avisar a tela que algo mudou)

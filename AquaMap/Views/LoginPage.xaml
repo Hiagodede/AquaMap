@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             xmlns:behaviors="clr-namespace:AquaMap.Behaviors"
              x:Class="AquaMap.Views.LoginPage"
              x:DataType="vm:LoginViewModel"
              Title="Acesso Técnico"
@@ -86,7 +87,11 @@
                                    MaxLength="14"
                                    FontSize="16"
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
-                                   PlaceholderColor="{StaticResource TextMuted}" />
+                                   PlaceholderColor="{StaticResource TextMuted}">
+                                <Entry.Behaviors>
+                                    <behaviors:CpfMaskBehavior />
+                                </Entry.Behaviors>
+                            </Entry>
                         </Border>
                     </VerticalStackLayout>
 

@@ -74,6 +74,8 @@ namespace AquaMap.Views
                     pin.SetBinding(AquaMap.Controls.CustomPin.LabelProperty, "Label");
                     pin.SetBinding(AquaMap.Controls.CustomPin.TypeProperty, "Type");
                     pin.SetBinding(AquaMap.Controls.CustomPin.PinColorProperty, "PinColor");
+                    pin.SetBinding(AquaMap.Controls.CustomPin.ReservoirIdProperty, "ReservoirId");
+                    pin.InfoWindowClicked += OnInfoWindowClicked;
                     return pin;
                 })
             };
@@ -84,6 +86,14 @@ namespace AquaMap.Views
 
             // Insere o mapa no início do Grid (atrás dos overlays)
             grid.Children.Insert(0, nativeMap);
+        }
+
+        private async void OnInfoWindowClicked(object? sender, EventArgs e)
+        {
+            if (sender is AquaMap.Controls.CustomPin pin)
+            {
+                await Shell.Current.GoToAsync($"ReservoirDetailPage?ReservoirId={pin.ReservoirId}&ReservoirName={Uri.EscapeDataString(pin.Label)}");
+            }
         }
 #endif
     }
