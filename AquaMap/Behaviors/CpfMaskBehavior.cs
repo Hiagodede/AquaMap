@@ -59,7 +59,13 @@ namespace AquaMap.Behaviors
 
             if (entry.Text != formatted)
             {
-                entry.Text = formatted;
+                entry.Dispatcher.Dispatch(() =>
+                {
+                    _isFormatting = true;
+                    entry.Text = formatted;
+                    entry.CursorPosition = formatted.Length;
+                    _isFormatting = false;
+                });
             }
 
             _isFormatting = false;

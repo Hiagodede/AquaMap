@@ -111,6 +111,7 @@
                                        Placeholder="Sua senha"
                                        Text="{Binding Password}"
                                        IsPassword="{Binding IsPasswordHidden}"
+                                       MaxLength="30"
                                        FontSize="16"
                                        Margin="10,0,0,0"
                                        TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
