@@ -141,12 +141,14 @@ namespace AquaMap.ViewModels
 
         public ICommand SaveCommand { get; }
         public ICommand DeleteCommand { get; }
+        public ICommand GetLocationCommand { get; }
 
         public ReservoirFormViewModel(ApiService apiService)
         {
             _apiService = apiService;
             SaveCommand = new Command(async () => await SaveAsync());
             DeleteCommand = new Command(async () => await DeleteAsync());
+            GetLocationCommand = new Command(async () => await GetLocationAsync());
         }
 
         public void InitializeForm()
@@ -235,6 +237,7 @@ namespace AquaMap.ViewModels
             {
                 IsSuccess = false;
                 StatusMessage = "Coordenadas inválidas. Use formato decimal (ex: -20.7636).";
+                try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
                 return;
             }
 
@@ -266,6 +269,7 @@ namespace AquaMap.ViewModels
                     IsSuccess = true;
                     StatusMessage = IsEditing ? "Reservatório atualizado!" : "Reservatório cadastrado!";
                     ClearDraft();
+                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
                     await Task.Delay(1000);
                     await Shell.Current.GoToAsync("..");
                 }
@@ -273,6 +277,7 @@ namespace AquaMap.ViewModels
                 {
                     IsSuccess = false;
                     StatusMessage = "Erro ao salvar. Verifique conexão e permissões.";
+                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
                 }
             }
             catch (Exception ex)
@@ -322,6 +327,59 @@ namespace AquaMap.ViewModels
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        private async Task GetLocationAsync()
+        {
+            if (IsBusy) return;
+
+            IsBusy = true;
+            StatusMessage = "Buscando localização atual...";
+            
+            try
+            {
+                var request = new Microsoft.Maui.Devices.Sensors.GeolocationRequest(Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                var location = await Microsoft.Maui.Devices.Sensors.Geolocation.Default.GetLocationAsync(request);
+
+                if (location != null)
+                {
+                    _isFormattingCoord = true;
+                    ReservoirLatitude = location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    ReservoirLongitude = location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    _isFormattingCoord = false;
+                    OnPropertyChanged(nameof(ReservoirLatitude));
+                    OnPropertyChanged(nameof(ReservoirLongitude));
+                    StatusMessage = "Localização capturada com sucesso.";
+                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
+                    SaveDraft();
+                }
+                else
+                {
+                    StatusMessage = "Não foi possível obter a localização.";
+                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
+                }
+            }
+            catch (Microsoft.Maui.ApplicationModel.FeatureNotSupportedException)
+            {
+                StatusMessage = "GPS não suportado neste dispositivo.";
+            }
+            catch (Microsoft.Maui.ApplicationModel.FeatureNotEnabledException)
+            {
+                StatusMessage = "Ative o GPS do dispositivo.";
+            }
+            catch (Microsoft.Maui.ApplicationModel.PermissionException)
+            {
+                StatusMessage = "Permissão de localização negada.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Erro ao obter localização: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

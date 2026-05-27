@@ -382,6 +382,7 @@ namespace AquaMap.ViewModels
             {
                 IsSuccess = false;
                 StatusMessage = "Corrija os parâmetros fora do padrão antes de enviar.";
+                try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
                 return;
             }
 
@@ -475,6 +476,7 @@ namespace AquaMap.ViewModels
 
                 IsSuccess = true;
                 StatusColor = "Green";
+                try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
                 if (syncSuccess)
                 {
                     StatusMessage = "Coleta registrada e enviada com sucesso!";
@@ -491,6 +493,7 @@ namespace AquaMap.ViewModels
                 IsSuccess = false;
                 StatusColor = "Red";
                 StatusMessage = $"Erro ao salvar coleta: {ex.Message}";
+                try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
             }
             finally
             {
