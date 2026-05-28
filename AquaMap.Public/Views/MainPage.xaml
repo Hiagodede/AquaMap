@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.Public.ViewModels"
+             x:Class="AquaMap.Public.Views.MainPage"
+             x:DataType="vm:MainViewModel"
+             Title="Mapa da Água"
+             BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0F172A}">
+
+    <Grid>
+        <!-- WebView para o Mapa Leaflet -->
+        <WebView x:Name="ReservoirMapWebView"
+                 HorizontalOptions="FillAndExpand"
+                 VerticalOptions="FillAndExpand" />
+
+        <!-- Floating Header -->
+        <Border VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                Margin="16,40,16,12"
+                StrokeShape="RoundRectangle 16"
+                Stroke="Transparent"
+                Padding="16,14"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
+            <Border.Shadow><Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.12" /></Border.Shadow>
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="Mapa da Qualidade da Água" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=White}" />
+                    <Label Text="Transparência e Saúde Pública" FontSize="12" TextColor="#64748B" />
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- Loading -->
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" HorizontalOptions="Center" VerticalOptions="Center" />
+    </Grid>
+</ContentPage>

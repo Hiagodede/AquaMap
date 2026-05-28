@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.Public.ViewModels"
+             xmlns:models="clr-namespace:AquaMap.Domain.Entities;assembly=AquaMap.Domain"
+             x:Class="AquaMap.Public.Views.ReservoirDetailPage"
+             x:DataType="vm:ReservoirDetailViewModel"
+             Title="{Binding Reservoir.Name}"
+             BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0F172A}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="20">
+            <Border StrokeShape="RoundRectangle 16" BackgroundColor="#155E75" Stroke="Transparent" Padding="20">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Boletim de Qualidade" FontSize="18" FontAttributes="Bold" TextColor="White" />
+                    <Label Text="Acompanhe a pureza da água da sua região em tempo real." TextColor="#A5F3FC" FontSize="13" />
+                </VerticalStackLayout>
+            </Border>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" />
+
+            <CollectionView ItemsSource="{Binding Analyses}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:WaterAnalysis">
+                        <Border StrokeShape="RoundRectangle 16" Margin="0,0,0,16" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Stroke="Transparent" Padding="16">
+                            <VerticalStackLayout Spacing="12">
+                                <Label Text="{Binding AnalysisDate, StringFormat='Data da Coleta: {0:dd/MM/yyyy HH:mm}'}" FontSize="12" TextColor="#64748B" FontAttributes="Bold" />
+                                
+                                <Grid ColumnDefinitions="*,*">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="💧 Cloro" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
+                                        <Label Text="{Binding ResidualChlorine, StringFormat='{0:F2} mg/L'}" FontSize="16" TextColor="#0284C7" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="🧪 pH" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
+                                        <Label Text="{Binding Ph, StringFormat='{0:F2}'}" FontSize="16" TextColor="#0284C7" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                                <Grid ColumnDefinitions="*,*">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="🌫️ Turbidez" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
+                                        <Label Text="{Binding Turbidity, StringFormat='{0:F2} NTU'}" FontSize="16" TextColor="#0284C7" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                        <Label Text="🦠 E. Coli" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
+                                        <Label FontSize="16">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding EColiAbsent}" Value="True">
+                                                    <Setter Property="Text" Value="Ausente ✅" />
+                                                    <Setter Property="TextColor" Value="#10B981" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding EColiAbsent}" Value="False">
+                                                    <Setter Property="Text" Value="Presente ❌" />
+                                                    <Setter Property="TextColor" Value="#EF4444" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+                <CollectionView.EmptyView>
+                    <Label Text="Nenhuma análise encontrada." HorizontalOptions="Center" TextColor="#64748B" />
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

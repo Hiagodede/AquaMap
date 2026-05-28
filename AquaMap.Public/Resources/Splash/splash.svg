@@ -1,0 +1,6 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Map Pin Background -->
+  <path d="M128 24C83.817 24 48 59.817 48 104C48 159 128 232 128 232C128 232 208 159 208 104C208 59.817 172.183 24 128 24Z" fill="#FFFFFF" />
+  <!-- Water Drop Cutout (Matches background color #155E75) -->
+  <path d="M128 56C128 56 96 96 96 120C96 137.673 110.327 152 128 152C145.673 152 160 137.673 160 120C160 96 128 56 128 56Z" fill="#155E75"/>
+</svg>
