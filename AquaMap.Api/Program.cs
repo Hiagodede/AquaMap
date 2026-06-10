@@ -201,6 +201,61 @@ app.MapDelete("/users/{id}", async (AppDbContext db, Guid id) =>
 .WithName("DeleteUser")
 .RequireAuthorization();
 
+// GAP 5 — Dashboard de Métricas
+app.MapGet("/metrics", async (AppDbContext db) =>
+{
+    var totalReservoirs = await db.Reservoirs.CountAsync();
+    var totalAnalyses = await db.WaterAnalyses.CountAsync();
+
+    // Últimas análises de cada reservatório
+    var latestPerReservoir = await db.WaterAnalyses
+        .GroupBy(w => w.ReservoirId)
+        .Select(g => g.OrderByDescending(w => w.AnalysisDate).First())
+        .ToListAsync();
+
+    var outOfStandard = latestPerReservoir.Count(w =>
+        !(w.ResidualChlorine >= 0.2 && w.ResidualChlorine <= 5.0 &&
+          w.Ph >= 6.0 && w.Ph <= 9.5 &&
+          w.Turbidity <= 5.0 &&
+          w.Iron <= 0.3 &&
+          w.EColiAbsent));
+
+    var noData = totalReservoirs - latestPerReservoir.Count;
+
+    return Results.Ok(new
+    {
+        TotalReservoirs = totalReservoirs,
+        TotalAnalyses = totalAnalyses,
+        ReservoirsOk = latestPerReservoir.Count - outOfStandard,
+        ReservoirsAlert = outOfStandard,
+        ReservoirsNoData = noData,
+        LastUpdated = latestPerReservoir.Any()
+            ? latestPerReservoir.Max(w => w.AnalysisDate)
+            : (DateTime?)null
+    });
+})
+.WithName("GetMetrics")
+.RequireAuthorization();
+
+// GAP 1 — Pontos de coleta georreferenciados (público para App Cidadão)
+app.MapGet("/water-analysis/collection-points", async (AppDbContext db) =>
+{
+    return await db.WaterAnalyses
+        .Where(w => w.CollectionLatitude != null && w.CollectionLongitude != null)
+        .OrderByDescending(w => w.AnalysisDate)
+        .Select(w => new
+        {
+            w.Id,
+            w.ReservoirId,
+            w.AnalysisDate,
+            w.CollectionLatitude,
+            w.CollectionLongitude,
+            w.IsPotable
+        })
+        .ToListAsync();
+})
+.WithName("GetCollectionPoints");
+
 app.Run();
 
 public record LoginRequest(string TaxId, string Password);

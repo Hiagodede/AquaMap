@@ -10,8 +10,8 @@
     <Grid>
         <!-- WebView para o Mapa Leaflet -->
         <WebView x:Name="ReservoirMapWebView"
-                 HorizontalOptions="FillAndExpand"
-                 VerticalOptions="FillAndExpand" />
+                 HorizontalOptions="Fill"
+                 VerticalOptions="Fill" />
 
         <!-- Floating Header -->
         <Border VerticalOptions="Start"

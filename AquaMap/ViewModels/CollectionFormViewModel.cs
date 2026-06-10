@@ -126,6 +126,52 @@ namespace AquaMap.ViewModels
             }
         }
 
+        // GAP 7 — Campo de Ferro (Fe)
+        private string _iron = string.Empty;
+        public string Iron
+        {
+            get => _iron;
+            set
+            {
+                _iron = value;
+                OnPropertyChanged();
+                SaveDraft();
+                _ = ValidateIronAsync();
+            }
+        }
+
+        private bool _isIronValid = true;
+        public bool IsIronValid
+        {
+            get => _isIronValid;
+            set { _isIronValid = value; OnPropertyChanged(); }
+        }
+
+        private string _ironWarning = string.Empty;
+        public string IronWarning
+        {
+            get => _ironWarning;
+            set { _ironWarning = value; OnPropertyChanged(); }
+        }
+
+        // GAP 1 — GPS do ponto de coleta
+        private double? _collectionLatitude;
+        private double? _collectionLongitude;
+
+        private string _locationStatus = string.Empty;
+        public string LocationStatus
+        {
+            get => _locationStatus;
+            set { _locationStatus = value; OnPropertyChanged(); }
+        }
+
+        private bool _isCapturingLocation;
+        public bool IsCapturingLocation
+        {
+            get => _isCapturingLocation;
+            set { _isCapturingLocation = value; OnPropertyChanged(); }
+        }
+
         private bool _isBusy;
         public bool IsBusy
         {
@@ -161,6 +207,7 @@ namespace AquaMap.ViewModels
         public ICommand LoadReservoirsCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand ManageUsersCommand { get; }
+        public ICommand CaptureCollectionLocationCommand { get; }
 
         public CollectionFormViewModel(ApiService apiService, LocalDatabaseService localDbService, SyncService syncService)
         {
@@ -170,6 +217,7 @@ namespace AquaMap.ViewModels
             SubmitCommand = new Command(async () => await SubmitAnalysisAsync());
             LoadReservoirsCommand = new Command(async () => await LoadReservoirsAsync());
             LogoutCommand = new Command(async () => await LogoutAsync());
+            CaptureCollectionLocationCommand = new Command(async () => await CaptureCollectionLocationAsync());
             ManageUsersCommand = new Command(async () => 
             {
                 if (IsBusy) return;
@@ -193,6 +241,7 @@ namespace AquaMap.ViewModels
             Preferences.Default.Set("Draft_Collection_Ph", Ph);
             Preferences.Default.Set("Draft_Collection_Turbidity", Turbidity);
             Preferences.Default.Set("Draft_Collection_EColiAbsent", EColiAbsent);
+            Preferences.Default.Set("Draft_Collection_Iron", Iron);
         }
 
         private void LoadDraft()
@@ -201,6 +250,7 @@ namespace AquaMap.ViewModels
             _ph = Preferences.Default.Get("Draft_Collection_Ph", string.Empty);
             _turbidity = Preferences.Default.Get("Draft_Collection_Turbidity", string.Empty);
             _eColiAbsent = Preferences.Default.Get("Draft_Collection_EColiAbsent", true);
+            _iron = Preferences.Default.Get("Draft_Collection_Iron", string.Empty);
         }
 
         private void ClearDraft()
@@ -210,6 +260,7 @@ namespace AquaMap.ViewModels
             Preferences.Default.Remove("Draft_Collection_Ph");
             Preferences.Default.Remove("Draft_Collection_Turbidity");
             Preferences.Default.Remove("Draft_Collection_EColiAbsent");
+            Preferences.Default.Remove("Draft_Collection_Iron");
         }
 
         private System.Threading.CancellationTokenSource? _chlorineCts;
@@ -291,6 +342,68 @@ namespace AquaMap.ViewModels
                 }
             }
             catch (OperationCanceledException) { }
+        }
+
+        // GAP 7 — Validação do Ferro
+        private System.Threading.CancellationTokenSource? _ironCts;
+        private async Task ValidateIronAsync()
+        {
+            _ironCts?.Cancel();
+            _ironCts = new System.Threading.CancellationTokenSource();
+            try
+            {
+                await Task.Delay(500, _ironCts.Token);
+                if (string.IsNullOrWhiteSpace(Iron))
+                {
+                    IsIronValid = true;
+                    IronWarning = string.Empty;
+                }
+                else if (double.TryParse(Iron.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                {
+                    IsIronValid = val >= 0.0 && val <= 0.3;
+                    IronWarning = IsIronValid ? string.Empty : "Ideal: ≤ 0.3 mg/L (Portaria 888)";
+                }
+                else
+                {
+                    IsIronValid = false;
+                    IronWarning = "Valor inválido.";
+                }
+            }
+            catch (OperationCanceledException) { }
+        }
+
+        // GAP 1 — Captura de GPS do ponto de coleta
+        private async Task CaptureCollectionLocationAsync()
+        {
+            if (IsCapturingLocation) return;
+            IsCapturingLocation = true;
+            LocationStatus = "Buscando localização...";
+            try
+            {
+                var location = await Microsoft.Maui.Devices.Sensors.Geolocation.Default.GetLocationAsync(
+                    new Microsoft.Maui.Devices.Sensors.GeolocationRequest(
+                        Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Medium,
+                        TimeSpan.FromSeconds(10)));
+                if (location != null)
+                {
+                    _collectionLatitude = location.Latitude;
+                    _collectionLongitude = location.Longitude;
+                    LocationStatus = $"📍 {location.Latitude:F5}, {location.Longitude:F5}";
+                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
+                }
+                else
+                {
+                    LocationStatus = "Localização não disponível.";
+                }
+            }
+            catch (Exception)
+            {
+                LocationStatus = "Ative o GPS e tente novamente.";
+            }
+            finally
+            {
+                IsCapturingLocation = false;
+            }
         }
 
         private async Task LoadReservoirsAsync()
@@ -430,6 +543,9 @@ namespace AquaMap.ViewModels
 
             try
             {
+                // Parse do Ferro (opcional, padrão 0)
+                double.TryParse(Iron?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double ironVal);
+
                 // Criar entidade local do banco de dados SQLite com IsPendingSync = true
                 var localAnalysis = new LocalWaterAnalysis
                 {
@@ -438,6 +554,9 @@ namespace AquaMap.ViewModels
                     Ph = phVal,
                     Turbidity = turbidityVal,
                     EColiAbsent = EColiAbsent,
+                    Iron = ironVal,
+                    CollectionLatitude = _collectionLatitude,
+                    CollectionLongitude = _collectionLongitude,
                     ReservoirId = SelectedReservoir.Id,
                     IsPendingSync = true
                 };
@@ -458,11 +577,16 @@ namespace AquaMap.ViewModels
                 _residualChlorine = ""; 
                 _ph = ""; 
                 _turbidity = "";
+                _iron = "";
                 _selectedReservoir = null;
                 _eColiAbsent = true;
+                _collectionLatitude = null;
+                _collectionLongitude = null;
+                LocationStatus = string.Empty;
                 OnPropertyChanged(nameof(ResidualChlorine));
                 OnPropertyChanged(nameof(Ph));
                 OnPropertyChanged(nameof(Turbidity));
+                OnPropertyChanged(nameof(Iron));
                 OnPropertyChanged(nameof(SelectedReservoir));
                 OnPropertyChanged(nameof(EColiAbsent));
 
@@ -473,6 +597,8 @@ namespace AquaMap.ViewModels
                 PhWarning = string.Empty;
                 IsTurbidityValid = true;
                 TurbidityWarning = string.Empty;
+                IsIronValid = true;
+                IronWarning = string.Empty;
 
                 IsSuccess = true;
                 StatusColor = "Green";

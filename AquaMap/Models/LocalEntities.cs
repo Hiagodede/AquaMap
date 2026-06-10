@@ -29,6 +29,9 @@ namespace AquaMap.Models
         public double Ph { get; set; }
         public double Turbidity { get; set; }
         public bool EColiAbsent { get; set; }
+        public double Iron { get; set; }              // GAP 7: Ferro (mg/L)
+        public double? CollectionLatitude { get; set; }  // GAP 1: GPS da coleta
+        public double? CollectionLongitude { get; set; } // GAP 1: GPS da coleta
 
         [Indexed]
         public int ReservoirId { get; set; }
@@ -46,10 +49,14 @@ namespace AquaMap.Models
         public bool IsTurbidityValid => Turbidity <= 5.0;
 
         [Ignore]
+        public bool IsIronValid => Iron <= 0.3;
+
+        [Ignore]
         public bool IsPotable => 
             ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0 &&
             Ph >= 6.0 && Ph <= 9.5 &&
             Turbidity <= 5.0 &&
+            Iron <= 0.3 &&
             EColiAbsent;
     }
 
