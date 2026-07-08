@@ -8,12 +8,11 @@ namespace AquaMap.Public.Services
     public class ApiService
     {
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://aquamap-g0at.onrender.com";
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public ApiService()
+        public ApiService(HttpClient httpClient)
         {
-            _httpClient = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+            _httpClient = httpClient;
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
