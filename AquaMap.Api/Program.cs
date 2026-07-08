@@ -170,6 +170,12 @@ app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
 
 app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =>
 {
+    var validationError = ValidateWaterAnalysis(analysis);
+    if (validationError != null) return Results.BadRequest(new { error = validationError });
+
+    var reservoirExists = await db.Reservoirs.AnyAsync(r => r.Id == analysis.ReservoirId);
+    if (!reservoirExists) return Results.BadRequest(new { error = "ReservoirId inválido." });
+
     db.WaterAnalyses.Add(analysis);
     await db.SaveChangesAsync();
     return Results.Created($"/water-analysis/{analysis.Id}", analysis);
@@ -276,6 +282,17 @@ app.MapGet("/water-analysis/collection-points", async (AppDbContext db) =>
 .WithName("GetCollectionPoints");
 
 app.Run();
+
+// Validação básica de sanidade (rejeita valores fisicamente impossíveis;
+// não rejeita leituras fora da Portaria 888 — isso é o propósito do registro).
+static string? ValidateWaterAnalysis(WaterAnalysis a)
+{
+    if (a.Ph < 0 || a.Ph > 14) return "pH deve estar entre 0 e 14.";
+    if (a.ResidualChlorine < 0 || a.ResidualChlorine > 20) return "Cloro residual deve estar entre 0 e 20 mg/L.";
+    if (a.Turbidity < 0 || a.Turbidity > 1000) return "Turbidez deve estar entre 0 e 1000 NTU.";
+    if (a.Iron < 0 || a.Iron > 100) return "Ferro deve estar entre 0 e 100 mg/L.";
+    return null;
+}
 
 public record LoginRequest(string TaxId, string Password);
 public record ReservoirRequest(string Name, double Latitude, double Longitude, List<string>? NeighborhoodNames = null);
