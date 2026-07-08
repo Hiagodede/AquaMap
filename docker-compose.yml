@@ -27,7 +27,7 @@ services:
       - Jwt__Issuer=${JWT_ISSUER}
       - Jwt__Audience=${JWT_AUDIENCE}
     ports:
-      - "5059:80"
+      - "5059:8080"
     depends_on:
       - db
     restart: unless-stopped
