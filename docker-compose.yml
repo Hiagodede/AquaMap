@@ -5,9 +5,9 @@ services:
     image: postgres:15
     container_name: aquamap_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: adminpassword
-      POSTGRES_DB: AquaMapDb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -22,10 +22,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       # A API vai ler essa Connection String para conectar no banco de dados
-      - ConnectionStrings__DefaultConnection=Host=db;Database=AquaMapDb;Username=postgres;Password=adminpassword
-      - JwtSettings__Key=UmaChaveSuperSecretaParaProducaoAcimaDe32Caracteres
-      - JwtSettings__Issuer=AquaMapApi
-      - JwtSettings__Audience=AquaMapApp
+      - ConnectionStrings__DefaultConnection=Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
     ports:
       - "5059:80"
     depends_on:
