@@ -20,13 +20,11 @@ Plaintext
  │    └── 📄 AppShell.xaml    # Navegação central
  │
  ├── 📂 AquaMap.Domain (Camada Core - Pura)
- │    ├── 📂 Entities         # Modelos (User, CollectionPoint, LabAnalysis)
- │    ├── 📂 Enums            # Tipos fixos (PotabilityStatus)
- │    └── 📂 Interfaces       # Contratos (ICollectionPointRepository)
+ │    └── 📂 Entities         # Modelos (User, Reservoir, Neighborhood, WaterAnalysis)
  │
  ├── 📂 AquaMap.Infrastructure (Camada de Dados)
  │    ├── 📂 Data             # Contexto do Banco (AppDbContext)
- │    ├── 📂 Repositories     # Implementação do acesso a dados
+ │    ├── 📂 Migrations       # Migrações do EF Core
  │    └── 📂 Services         # Serviços de infra (ex: SeedDataService)
  │
  └── 📂 AquaMap.Application (Camada de Aplicação)
