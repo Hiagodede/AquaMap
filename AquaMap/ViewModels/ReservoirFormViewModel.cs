@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -9,6 +11,36 @@ using AquaMap.Services;
 
 namespace AquaMap.ViewModels
 {
+    /// <summary>
+    /// Item do checklist de bairros atendidos pelo reservatório.
+    /// </summary>
+    public class NeighborhoodCheckItem : INotifyPropertyChanged
+    {
+        public string Name { get; init; } = string.Empty;
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set { _isSelected = value; OnPropertyChanged(); }
+        }
+
+        public ICommand ToggleCommand { get; }
+
+        public NeighborhoodCheckItem()
+        {
+            ToggleCommand = new Command(() =>
+            {
+                IsSelected = !IsSelected;
+                try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
+            });
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
     [QueryProperty(nameof(ReservoirId), "ReservoirId")]
     [QueryProperty(nameof(ReservoirName), "ReservoirName")]
     [QueryProperty(nameof(ReservoirLatitude), "ReservoirLatitude")]
@@ -17,6 +49,30 @@ namespace AquaMap.ViewModels
     {
         private readonly ApiService _apiService;
 
+        // ── Lista oficial de pontos de coleta do SAAE ──────────────────────────
+        private static readonly string[] AllNeighborhoods =
+        {
+            "Clerio Moulin",
+            "Loteamento Boa Fé",
+            "Charqueada",
+            "Pedro Martins Rua 13",
+            "Samarco",
+            "Linha Amarela",
+            "Alto Universitário (Rua Felício Alcure)",
+            "Guararema",
+            "Colina (Ginásio de Esportes)",
+            "Centro",
+            "Rua do Norte",
+            "Vila Alta",
+            "BR 482",
+            "Cila Machado",
+            "Querosene",
+            "Loteamento Antônio Lemos Jr",
+            "Paiinha",
+            "Campo de Aviação"
+        };
+
+        // ── Propriedades da form ───────────────────────────────────────────────
         private int _reservoirId;
         public int ReservoirId
         {
@@ -28,14 +84,12 @@ namespace AquaMap.ViewModels
         public string ReservoirName
         {
             get => _reservoirName;
-            set 
-            { 
-                _reservoirName = value; 
-                OnPropertyChanged(); 
-                SaveDraft();
-            }
+            set { _reservoirName = value; OnPropertyChanged(); SaveDraft(); }
         }
 
+        // ── Coordenadas (internas) ─────────────────────────────────────────────
+        private double _latitude;
+        private double _longitude;
         private string _reservoirLatitude = string.Empty;
         private string _reservoirLongitude = string.Empty;
         private bool _isFormattingCoord = false;
@@ -68,51 +122,51 @@ namespace AquaMap.ViewModels
             }
         }
 
-        /// <summary>
-        /// Permite apenas: dígitos, um "-" no início, um "." como separador decimal, e no máximo 6 casas decimais.
-        /// Exemplo válido: -20.763600
-        /// </summary>
-        private static string SanitizeCoordinate(string input)
+        // ── UX de Localização ──────────────────────────────────────────────────
+        private bool _locationCaptured;
+        public bool LocationCaptured
         {
-            if (string.IsNullOrEmpty(input)) return input;
+            get => _locationCaptured;
+            set { _locationCaptured = value; OnPropertyChanged(); OnPropertyChanged(nameof(LocationNotCaptured)); }
+        }
+        public bool LocationNotCaptured => !_locationCaptured;
 
-            bool hasNegative = false;
-            bool hasDecimal = false;
-            int decimalDigits = 0;
-            var result = new System.Text.StringBuilder();
-
-            foreach (char c in input)
-            {
-                if (c == '-' && !hasNegative && result.Length == 0)
-                {
-                    hasNegative = true;
-                    result.Append(c);
-                }
-                else if ((c == '.' || c == ',') && !hasDecimal)
-                {
-                    hasDecimal = true;
-                    result.Append('.');
-                }
-                else if (char.IsDigit(c))
-                {
-                    if (hasDecimal)
-                    {
-                        if (decimalDigits < 6)
-                        {
-                            result.Append(c);
-                            decimalDigits++;
-                        }
-                    }
-                    else
-                    {
-                        result.Append(c);
-                    }
-                }
-            }
-
-            return result.ToString();
+        private string _locationDisplay = string.Empty;
+        public string LocationDisplay
+        {
+            get => _locationDisplay;
+            set { _locationDisplay = value; OnPropertyChanged(); }
         }
 
+        private bool _isMapPickerVisible;
+        public bool IsMapPickerVisible
+        {
+            get => _isMapPickerVisible;
+            set { _isMapPickerVisible = value; OnPropertyChanged(); OnPropertyChanged(nameof(MapPickerButtonText)); }
+        }
+        public string MapPickerButtonText => IsMapPickerVisible ? "🗺️ Fechar mapa" : "🗺️ Marcar no mapa manualmente";
+
+        private bool _isManualInputVisible;
+        public bool IsManualInputVisible
+        {
+            get => _isManualInputVisible;
+            set { _isManualInputVisible = value; OnPropertyChanged(); OnPropertyChanged(nameof(ManualInputButtonText)); }
+        }
+        public string ManualInputButtonText => IsManualInputVisible ? "▲ Ocultar campos manuais" : "Inserir coordenadas manualmente";
+
+        private bool _isCapturingGps;
+        public bool IsCapturingGps
+        {
+            get => _isCapturingGps;
+            set { _isCapturingGps = value; OnPropertyChanged(); }
+        }
+
+        // ── Bairros ────────────────────────────────────────────────────────────
+        public ObservableCollection<NeighborhoodCheckItem> Neighborhoods { get; } = new();
+
+        public int SelectedNeighborhoodsCount => Neighborhoods.Count(n => n.IsSelected);
+
+        // ── Status / Busy ──────────────────────────────────────────────────────
         private bool _isBusy;
         public bool IsBusy
         {
@@ -139,23 +193,45 @@ namespace AquaMap.ViewModels
         public bool IsEditing => ReservoirId > 0;
         public string PageTitle => IsEditing ? "Editar Reservatório" : "Novo Reservatório";
 
+        // ── Comandos ───────────────────────────────────────────────────────────
         public ICommand SaveCommand { get; }
         public ICommand DeleteCommand { get; }
-        public ICommand GetLocationCommand { get; }
+        public ICommand CaptureLocationCommand { get; }
+        public ICommand ToggleMapPickerCommand { get; }
+        public ICommand ToggleManualInputCommand { get; }
 
         public ReservoirFormViewModel(ApiService apiService)
         {
             _apiService = apiService;
+
+            // Popula lista de bairros
+            foreach (var name in AllNeighborhoods)
+            {
+                var item = new NeighborhoodCheckItem { Name = name };
+                item.PropertyChanged += (_, __) => OnPropertyChanged(nameof(SelectedNeighborhoodsCount));
+                Neighborhoods.Add(item);
+            }
+
             SaveCommand = new Command(async () => await SaveAsync());
             DeleteCommand = new Command(async () => await DeleteAsync());
-            GetLocationCommand = new Command(async () => await GetLocationAsync());
+            CaptureLocationCommand = new Command(async () => await CaptureGpsLocationAsync());
+            ToggleMapPickerCommand = new Command(() =>
+            {
+                IsMapPickerVisible = !IsMapPickerVisible;
+                if (IsMapPickerVisible) IsManualInputVisible = false;
+            });
+            ToggleManualInputCommand = new Command(() =>
+            {
+                IsManualInputVisible = !IsManualInputVisible;
+                if (IsManualInputVisible) IsMapPickerVisible = false;
+            });
         }
 
         public void InitializeForm()
         {
             if (IsEditing)
             {
-                _ = LoadCoordinatesIfNeededAsync();
+                _ = LoadReservoirDataAsync();
             }
             else
             {
@@ -163,6 +239,79 @@ namespace AquaMap.ViewModels
             }
         }
 
+        /// <summary>
+        /// Chamado pelo code-behind quando o usuário toca no mapa do seletor.
+        /// </summary>
+        public void SetLocationFromMap(double lat, double lng)
+        {
+            _latitude = lat;
+            _longitude = lng;
+            _isFormattingCoord = true;
+            ReservoirLatitude = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            ReservoirLongitude = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _isFormattingCoord = false;
+            OnPropertyChanged(nameof(ReservoirLatitude));
+            OnPropertyChanged(nameof(ReservoirLongitude));
+            LocationDisplay = $"📍 {lat:F5}, {lng:F5}";
+            LocationCaptured = true;
+            IsMapPickerVisible = false;
+            try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
+        }
+
+        // ── GPS ────────────────────────────────────────────────────────────────
+        private async Task CaptureGpsLocationAsync()
+        {
+            if (IsCapturingGps) return;
+            IsCapturingGps = true;
+            LocationDisplay = "Buscando localização...";
+            LocationCaptured = false;
+
+            try
+            {
+                var request = new Microsoft.Maui.Devices.Sensors.GeolocationRequest(
+                    Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Medium,
+                    TimeSpan.FromSeconds(10));
+                var location = await Microsoft.Maui.Devices.Sensors.Geolocation.Default.GetLocationAsync(request);
+
+                if (location != null)
+                {
+                    _latitude = location.Latitude;
+                    _longitude = location.Longitude;
+                    _isFormattingCoord = true;
+                    ReservoirLatitude = location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    ReservoirLongitude = location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    _isFormattingCoord = false;
+                    OnPropertyChanged(nameof(ReservoirLatitude));
+                    OnPropertyChanged(nameof(ReservoirLongitude));
+                    LocationDisplay = $"📍 {location.Latitude:F5}, {location.Longitude:F5}";
+                    LocationCaptured = true;
+                    SaveDraft();
+                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
+                }
+                else
+                {
+                    LocationDisplay = "Localização não disponível. Tente novamente.";
+                }
+            }
+            catch (Microsoft.Maui.ApplicationModel.FeatureNotEnabledException)
+            {
+                LocationDisplay = "Ative o GPS do dispositivo.";
+            }
+            catch (Microsoft.Maui.ApplicationModel.PermissionException)
+            {
+                LocationDisplay = "Permissão de localização negada.";
+            }
+            catch (Exception)
+            {
+                LocationDisplay = "Erro ao obter localização.";
+            }
+            finally
+            {
+                IsCapturingGps = false;
+            }
+        }
+
+        // ── Draft ──────────────────────────────────────────────────────────────
         private void SaveDraft()
         {
             if (IsEditing) return;
@@ -180,6 +329,13 @@ namespace AquaMap.ViewModels
             OnPropertyChanged(nameof(ReservoirName));
             OnPropertyChanged(nameof(ReservoirLatitude));
             OnPropertyChanged(nameof(ReservoirLongitude));
+
+            // Restaurar estado de localização se havia coordenadas salvas
+            if (!string.IsNullOrWhiteSpace(_reservoirLatitude) && !string.IsNullOrWhiteSpace(_reservoirLongitude))
+            {
+                LocationDisplay = $"📍 {_reservoirLatitude}, {_reservoirLongitude}";
+                LocationCaptured = true;
+            }
         }
 
         private void ClearDraft()
@@ -189,38 +345,45 @@ namespace AquaMap.ViewModels
             Preferences.Default.Remove("Draft_Reservoir_Longitude");
         }
 
-        private async Task LoadCoordinatesIfNeededAsync()
+        private async Task LoadReservoirDataAsync()
         {
             if (ReservoirId <= 0) return;
-            if (string.IsNullOrWhiteSpace(ReservoirLatitude) || string.IsNullOrWhiteSpace(ReservoirLongitude) ||
-                ReservoirLatitude == "0" || ReservoirLongitude == "0")
+            IsBusy = true;
+            try
             {
-                IsBusy = true;
-                try
+                var reservoirs = await _apiService.GetReservoirsAsync();
+                var res = reservoirs.FirstOrDefault(r => r.Id == ReservoirId);
+                if (res != null)
                 {
-                    var reservoirs = await _apiService.GetReservoirsAsync();
-                    var res = reservoirs.FirstOrDefault(r => r.Id == ReservoirId);
-                    if (res != null)
-                    {
-                        _isFormattingCoord = true;
-                        ReservoirLatitude = res.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        ReservoirLongitude = res.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        _isFormattingCoord = false;
-                        OnPropertyChanged(nameof(ReservoirLatitude));
-                        OnPropertyChanged(nameof(ReservoirLongitude));
-                    }
+                    // Coordenadas
+                    _latitude = res.Latitude;
+                    _longitude = res.Longitude;
+                    _isFormattingCoord = true;
+                    ReservoirLatitude = res.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    ReservoirLongitude = res.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    _isFormattingCoord = false;
+                    OnPropertyChanged(nameof(ReservoirLatitude));
+                    OnPropertyChanged(nameof(ReservoirLongitude));
+                    LocationDisplay = $"📍 {res.Latitude:F5}, {res.Longitude:F5}";
+                    LocationCaptured = true;
+
+                    // Bairros já vinculados
+                    var existingNames = res.Neighborhoods?.Select(n => n.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+                    foreach (var item in Neighborhoods)
+                        item.IsSelected = existingNames.Contains(item.Name);
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erro ao carregar coordenadas: {ex.Message}");
-                }
-                finally
-                {
-                    IsBusy = false;
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar reservatório: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
+        // ── Salvar ─────────────────────────────────────────────────────────────
         private async Task SaveAsync()
         {
             if (IsBusy) return;
@@ -232,11 +395,16 @@ namespace AquaMap.ViewModels
                 return;
             }
 
-            if (!double.TryParse(ReservoirLatitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat) ||
-                !double.TryParse(ReservoirLongitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lon))
+            // Tenta parsear as coordenadas dos campos internos ou dos Entry manuais
+            double lat = _latitude, lon = _longitude;
+            bool coordsOk = (lat != 0 && lon != 0) ||
+                            (double.TryParse(ReservoirLatitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lat) &&
+                             double.TryParse(ReservoirLongitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lon));
+
+            if (!coordsOk)
             {
                 IsSuccess = false;
-                StatusMessage = "Coordenadas inválidas. Use formato decimal (ex: -20.7636).";
+                StatusMessage = "Capture a localização ou informe as coordenadas.";
                 try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
                 return;
             }
@@ -252,17 +420,15 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             StatusMessage = string.Empty;
 
+            var selectedNeighborhoods = Neighborhoods.Where(n => n.IsSelected).Select(n => n.Name).ToList();
+
             try
             {
                 bool success;
                 if (IsEditing)
-                {
-                    success = await _apiService.UpdateReservoirAsync(ReservoirId, ReservoirName, lat, lon, token);
-                }
+                    success = await _apiService.UpdateReservoirAsync(ReservoirId, ReservoirName, lat, lon, token, selectedNeighborhoods);
                 else
-                {
-                    success = await _apiService.CreateReservoirAsync(ReservoirName, lat, lon, token);
-                }
+                    success = await _apiService.CreateReservoirAsync(ReservoirName, lat, lon, token, selectedNeighborhoods);
 
                 if (success)
                 {
@@ -306,9 +472,7 @@ namespace AquaMap.ViewModels
             {
                 var success = await _apiService.DeleteReservoirAsync(ReservoirId, token);
                 if (success)
-                {
                     await Shell.Current.GoToAsync("..");
-                }
                 else
                 {
                     IsSuccess = false;
@@ -326,60 +490,23 @@ namespace AquaMap.ViewModels
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        private async Task GetLocationAsync()
+        // ── Helpers ────────────────────────────────────────────────────────────
+        private static string SanitizeCoordinate(string input)
         {
-            if (IsBusy) return;
-
-            IsBusy = true;
-            StatusMessage = "Buscando localização atual...";
-            
-            try
+            if (string.IsNullOrEmpty(input)) return input;
+            bool hasNegative = false, hasDecimal = false;
+            int decimalDigits = 0;
+            var result = new System.Text.StringBuilder();
+            foreach (char c in input)
             {
-                var request = new Microsoft.Maui.Devices.Sensors.GeolocationRequest(Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
-                var location = await Microsoft.Maui.Devices.Sensors.Geolocation.Default.GetLocationAsync(request);
-
-                if (location != null)
-                {
-                    _isFormattingCoord = true;
-                    ReservoirLatitude = location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    ReservoirLongitude = location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    _isFormattingCoord = false;
-                    OnPropertyChanged(nameof(ReservoirLatitude));
-                    OnPropertyChanged(nameof(ReservoirLongitude));
-                    StatusMessage = "Localização capturada com sucesso.";
-                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
-                    SaveDraft();
-                }
-                else
-                {
-                    StatusMessage = "Não foi possível obter a localização.";
-                    try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
-                }
+                if (c == '-' && !hasNegative && result.Length == 0) { hasNegative = true; result.Append(c); }
+                else if ((c == '.' || c == ',') && !hasDecimal) { hasDecimal = true; result.Append('.'); }
+                else if (char.IsDigit(c)) { if (hasDecimal) { if (decimalDigits < 6) { result.Append(c); decimalDigits++; } } else result.Append(c); }
             }
-            catch (Microsoft.Maui.ApplicationModel.FeatureNotSupportedException)
-            {
-                StatusMessage = "GPS não suportado neste dispositivo.";
-            }
-            catch (Microsoft.Maui.ApplicationModel.FeatureNotEnabledException)
-            {
-                StatusMessage = "Ative o GPS do dispositivo.";
-            }
-            catch (Microsoft.Maui.ApplicationModel.PermissionException)
-            {
-                StatusMessage = "Permissão de localização negada.";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Erro ao obter localização: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            return result.ToString();
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
