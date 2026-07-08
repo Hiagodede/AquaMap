@@ -122,6 +122,9 @@ app.MapPost("/reservoirs", async (AppDbContext db, ReservoirRequest request) =>
         Latitude = request.Latitude,
         Longitude = request.Longitude
     };
+    foreach (var name in (request.NeighborhoodNames ?? new List<string>()).Distinct(StringComparer.OrdinalIgnoreCase))
+        reservoir.Neighborhoods.Add(new Neighborhood { Name = name });
+
     db.Reservoirs.Add(reservoir);
     await db.SaveChangesAsync();
     return Results.Created($"/reservoirs/{reservoir.Id}", reservoir);
@@ -131,11 +134,23 @@ app.MapPost("/reservoirs", async (AppDbContext db, ReservoirRequest request) =>
 
 app.MapPut("/reservoirs/{id}", async (AppDbContext db, int id, ReservoirRequest request) =>
 {
-    var reservoir = await db.Reservoirs.FindAsync(id);
+    var reservoir = await db.Reservoirs.Include(r => r.Neighborhoods).FirstOrDefaultAsync(r => r.Id == id);
     if (reservoir is null) return Results.NotFound();
     reservoir.Name = request.Name;
     reservoir.Latitude = request.Latitude;
     reservoir.Longitude = request.Longitude;
+
+    if (request.NeighborhoodNames != null)
+    {
+        var desired = request.NeighborhoodNames.Distinct(StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var stale in reservoir.Neighborhoods.Where(n => !desired.Contains(n.Name)).ToList())
+            db.Neighborhoods.Remove(stale);
+
+        var existing = reservoir.Neighborhoods.Select(n => n.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in desired.Where(name => !existing.Contains(name)))
+            reservoir.Neighborhoods.Add(new Neighborhood { Name = name });
+    }
+
     await db.SaveChangesAsync();
     return Results.Ok(reservoir);
 })
@@ -263,6 +278,6 @@ app.MapGet("/water-analysis/collection-points", async (AppDbContext db) =>
 app.Run();
 
 public record LoginRequest(string TaxId, string Password);
-public record ReservoirRequest(string Name, double Latitude, double Longitude);
+public record ReservoirRequest(string Name, double Latitude, double Longitude, List<string>? NeighborhoodNames = null);
 public record CreateUserRequest(string FullName, string TaxId, DateTime BirthDate, string Address, string PhoneNumber, string Email, string Password, UserType Role);
 
