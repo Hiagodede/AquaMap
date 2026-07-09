@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AquaMap.Api", "AquaMap.Api\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AquaMap.Public", "AquaMap.Public\AquaMap.Public.csproj", "{07E9939D-9748-4BAC-811F-BC58EB28BEC0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AquaMap.Client.Shared", "AquaMap.Client.Shared\AquaMap.Client.Shared.csproj", "{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{07E9939D-9748-4BAC-811F-BC58EB28BEC0}.Release|x64.Build.0 = Release|Any CPU
 		{07E9939D-9748-4BAC-811F-BC58EB28BEC0}.Release|x86.ActiveCfg = Release|Any CPU
 		{07E9939D-9748-4BAC-811F-BC58EB28BEC0}.Release|x86.Build.0 = Release|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Debug|x64.Build.0 = Debug|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Debug|x86.Build.0 = Debug|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Release|x64.ActiveCfg = Release|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Release|x64.Build.0 = Release|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Release|x86.ActiveCfg = Release|Any CPU
+		{73EACE86-5775-4C25-BCFE-E0E8ABC3D3AF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
