@@ -35,13 +35,27 @@ namespace AquaMap.Public.Views
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            var markers = _viewModel.Reservoirs.Select(r => new
+            var markers = _viewModel.Reservoirs.Select(r =>
             {
-                id = r.Id,
-                lat = r.Latitude,
-                lng = r.Longitude,
-                name = r.Name ?? "Reservatório",
-                color = GetColorForReservoir(r)
+                var allNeighborhoods = r.Neighborhoods?.Select(n => n.Name).ToList() ?? new List<string>();
+                string nText = string.Empty;
+                if (allNeighborhoods.Count > 0)
+                {
+                    if (allNeighborhoods.Count <= 3)
+                        nText = string.Join(", ", allNeighborhoods);
+                    else
+                        nText = string.Join(", ", allNeighborhoods.Take(3)) + $" e mais {allNeighborhoods.Count - 3}";
+                }
+
+                return new
+                {
+                    id = r.Id,
+                    lat = r.Latitude,
+                    lng = r.Longitude,
+                    name = r.Name ?? "Reservatório",
+                    status = GetStatusForReservoir(r),
+                    neighborhoods = nText
+                };
             }).ToList();
 
             var markersJson = JsonSerializer.Serialize(markers, options);
@@ -56,6 +70,40 @@ namespace AquaMap.Public.Views
         * {{ box-sizing: border-box; }}
         body, html {{ padding: 0; margin: 0; height: 100%; width: 100%; overflow: hidden; }}
         #map {{ height: 100vh; width: 100vw; }}
+        
+        /* GAP 2: Ícones acessíveis com formas diferentes */
+        .marker-ok {{
+            background-color: #10B981;
+            width: 28px; height: 28px;
+            border-radius: 50%; /* Círculo */
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-weight: bold; font-size: 14px;
+        }}
+        .marker-alert {{
+            background-color: transparent;
+            width: 0; height: 0;
+            border-left: 16px solid transparent;
+            border-right: 16px solid transparent;
+            border-bottom: 28px solid #EF4444; /* Triângulo */
+            position: relative;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        }}
+        .marker-alert::after {{
+            content: '!';
+            color: white; font-weight: bold; font-size: 16px;
+            position: absolute; top: 7px; left: -3px;
+        }}
+        .marker-nodata {{
+            background-color: #F59E0B;
+            width: 26px; height: 26px;
+            border-radius: 4px; /* Quadrado */
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-weight: bold; font-size: 14px;
+        }}
     </style>
 </head>
 <body>
@@ -69,18 +117,43 @@ namespace AquaMap.Public.Views
 
         var markers = {markersJson};
         markers.forEach(function(m) {{
-            var circleMarker = L.circleMarker([m.lat, m.lng], {{
-                color: m.color,
-                fillColor: m.color,
-                fillOpacity: 0.85,
-                radius: 14,
-                weight: 2
-            }}).addTo(map);
-            circleMarker.bindPopup(
-                '<b style=""font-size:14px"">' + m.name + '</b><br>' +
-                '<a href=""aquamap://details/' + m.id + '"" style=""color:#0284C7;font-size:12px"">Ver Detalhes &rarr;</a>'
-            );
-            circleMarker.on('click', function() {{ circleMarker.openPopup(); }});
+            
+            // GAP 4: Zonas críticas no mapa por bairro (área de risco)
+            if (m.status === 'alert') {{
+                L.circle([m.lat, m.lng], {{
+                    color: '#EF4444',
+                    fillColor: '#EF4444',
+                    fillOpacity: 0.15,
+                    radius: 800, // 800 metros de raio afetado
+                    weight: 1
+                }}).addTo(map).bindPopup('<b>Zona de Alerta</b><br>Região possivelmente afetada.');
+            }}
+
+            // GAP 2: Marcadores acessíveis (ícones/símbolos em vez de apenas cores)
+            var iconClass = 'marker-nodata';
+            var iconSymbol = '?';
+            
+            if (m.status === 'ok') {{ iconClass = 'marker-ok'; iconSymbol = '✓'; }}
+            else if (m.status === 'alert') {{ iconClass = 'marker-alert'; iconSymbol = ''; }} // Triângulo desenhado via CSS
+
+            var iconHtml = '<div class=""' + iconClass + '"">' + iconSymbol + '</div>';
+            
+            var customIcon = L.divIcon({{
+                html: iconHtml,
+                className: '', // Limpa classes padrão do leaflet
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            }});
+
+            var marker = L.marker([m.lat, m.lng], {{ icon: customIcon }}).addTo(map);
+            
+            var popUpText = '<b style=""font-size:14px"">' + m.name + '</b>';
+            if (m.neighborhoods) {{
+                popUpText += '<br><span style=""color:#64748B;font-size:11px"">Bairros: ' + m.neighborhoods + '</span>';
+            }}
+            popUpText += '<br><br><a href=""aquamap://details/' + m.id + '"" style=""color:#0284C7;font-size:13px;font-weight:bold;text-decoration:none;"">Ver Qualidade da Água &rarr;</a>';
+
+            marker.bindPopup(popUpText);
         }});
     </script>
 </body>
@@ -102,14 +175,11 @@ namespace AquaMap.Public.Views
             }
         }
 
-        private string GetColorForReservoir(Reservoir r)
+        private string GetStatusForReservoir(Reservoir r)
         {
-            if (r.WaterAnalyses == null || !r.WaterAnalyses.Any()) return "#F59E0B";
+            if (r.WaterAnalyses == null || !r.WaterAnalyses.Any()) return "nodata";
             var last = r.WaterAnalyses.OrderByDescending(x => x.AnalysisDate).First();
-            bool isGood = last.ResidualChlorine >= 0.2 && last.ResidualChlorine <= 2.0 &&
-                          last.Ph >= 6.0 && last.Ph <= 9.5 &&
-                          last.Turbidity <= 5.0 && last.EColiAbsent;
-            return isGood ? "#10B981" : "#EF4444";
+            return last.IsPotable ? "ok" : "alert";
         }
     }
 }
