@@ -5,6 +5,7 @@ Sistema cliente-servidor para monitoramento da qualidade da água do SAAE Alegre
 > Documentação completa: este README cobre visão geral e como rodar o projeto.
 > Para arquitetura técnica detalhada (fluxo de dados, autenticação, sincronização offline), veja **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 > Para o estado atual real do projeto — o que funciona, bugs conhecidos, dívidas técnicas e prioridades para quem assumir — veja **[HANDOFF.md](HANDOFF.md)**. Leia esse documento antes de começar a mexer no código.
+> Para testar os apps no Visual Studio (Windows, emulador Android ou celular físico, com geração de .apk) — veja **[MANUAL_TECNICO_TI_CINETICA.md](MANUAL_TECNICO_TI_CINETICA.md)**.
 
 ## 1. Visão Geral
 
