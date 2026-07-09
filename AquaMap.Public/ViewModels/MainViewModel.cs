@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using AquaMap.Domain.Entities;
-using AquaMap.Public.Services;
+using AquaMap.Client.Shared;
 
 namespace AquaMap.Public.ViewModels
 {

@@ -72,11 +72,11 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\AquaMap.Domain\AquaMap.Domain.csproj" />
+	  <ProjectReference Include="..\AquaMap.Client.Shared\AquaMap.Client.Shared.csproj" />
 	</ItemGroup>
 
 </Project>
