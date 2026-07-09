@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.Public.ViewModels"
+             x:Class="AquaMap.Public.Views.MainPage"
+             x:DataType="vm:MainViewModel"
+             Title="Mapa da Água"
+             BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0F172A}">
+
+    <Grid>
+        <!-- WebView para o Mapa Leaflet -->
+        <WebView x:Name="ReservoirMapWebView"
+                 HorizontalOptions="Fill"
+                 VerticalOptions="Fill" />
+
+        <!-- Floating Header -->
+        <Border VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                Margin="16,40,16,12"
+                StrokeShape="RoundRectangle 16"
+                Stroke="Transparent"
+                Padding="16,14"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
+            <Border.Shadow><Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.12" /></Border.Shadow>
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="Mapa da Qualidade da Água" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=White}" />
+                    <Label Text="Transparência e Saúde Pública" FontSize="12" TextColor="#64748B" />
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- Floating Legend -->
+        <Border VerticalOptions="End"
+                HorizontalOptions="Fill"
+                Margin="16,0,16,30"
+                StrokeShape="RoundRectangle 12"
+                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                Padding="16,12"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFFFA, Dark=#1E293BFA}">
+            <Border.Shadow><Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.1" /></Border.Shadow>
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Legenda" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource TextMuted}" />
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+                    <!-- Item 1 -->
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                        <Border WidthRequest="14" HeightRequest="14" StrokeShape="RoundRectangle 7" BackgroundColor="#10B981" VerticalOptions="Center" />
+                        <Label Text="Padrão Ideal" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <!-- Item 2 -->
+                    <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                        <!-- Triângulo via Polygon no MAUI -->
+                        <Polygon Points="7,0 14,14 0,14" Fill="#EF4444" WidthRequest="14" HeightRequest="14" VerticalOptions="Center" />
+                        <Label Text="Alerta" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <!-- Item 3 -->
+                    <HorizontalStackLayout Grid.Column="2" Spacing="6" VerticalOptions="Center">
+                        <Border WidthRequest="12" HeightRequest="12" StrokeShape="RoundRectangle 2" BackgroundColor="#F59E0B" VerticalOptions="Center" />
+                        <Label Text="Sem Dados" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Loading -->
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" HorizontalOptions="Center" VerticalOptions="Center" />
+    </Grid>
+</ContentPage>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             xmlns:models="clr-namespace:AquaMap.Domain.Entities;assembly=AquaMap.Domain"
+             xmlns:converters="clr-namespace:AquaMap.Converters"
+             x:Class="AquaMap.Views.CollectionFormPage"
+             x:DataType="vm:CollectionFormViewModel"
+             Title="Nova Coleta"
+             BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Técnicos" Command="{Binding ManageUsersCommand}" />
+        <ToolbarItem Text="Sair" Command="{Binding LogoutCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="20,16">
+
+            <!-- Header Card -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="Transparent" Padding="20,16">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#155E75" Offset="0.0" />
+                        <GradientStop Color="#0891B2" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Registro de Análise" FontSize="20" FontAttributes="Bold" TextColor="White" />
+                    <Label Text="Preencha os parâmetros da coleta" FontSize="13" TextColor="#A5F3FC" Opacity="0.85" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Reservatório Section -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="📍 Reservatório" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+                    <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="4,0">
+                        <Picker ItemsSource="{Binding Reservoirs}" ItemDisplayBinding="{Binding Name, x:DataType=models:Reservoir}" SelectedItem="{Binding SelectedReservoir}" Title="Selecione o reservatório..." />
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Parâmetros Section -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="⚗️ Parâmetros Químicos" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+
+                    <!-- Cloro -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Cloro Residual (mg/L)" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="Ex: 1.5" Text="{Binding ResidualChlorine}" Keyboard="Numeric" MaxLength="5" FontSize="15" />
+                        </Border>
+                        <Label Text="{Binding ChlorineWarning}" TextColor="#EF4444" FontSize="11" Margin="4,2,0,0" IsVisible="{Binding IsChlorineValid, Converter={StaticResource InverseBoolConverter}}" />
+                    </VerticalStackLayout>
+
+                    <!-- pH -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="pH" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="Ex: 7.2" Text="{Binding Ph}" Keyboard="Numeric" MaxLength="5" FontSize="15" />
+                        </Border>
+                        <Label Text="{Binding PhWarning}" TextColor="#EF4444" FontSize="11" Margin="4,2,0,0" IsVisible="{Binding IsPhValid, Converter={StaticResource InverseBoolConverter}}" />
+                    </VerticalStackLayout>
+
+                    <!-- Turbidez -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Turbidez (NTU)" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="Ex: 2.0" Text="{Binding Turbidity}" Keyboard="Numeric" MaxLength="6" FontSize="15" />
+                        </Border>
+                        <Label Text="{Binding TurbidityWarning}" TextColor="#EF4444" FontSize="11" Margin="4,2,0,0" IsVisible="{Binding IsTurbidityValid, Converter={StaticResource InverseBoolConverter}}" />
+                    </VerticalStackLayout>
+
+                    <!-- GAP 7: Ferro (Fe) -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Ferro — Fe (mg/L)" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 10" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}" Padding="14,2" HeightRequest="48">
+                            <Entry Placeholder="Ex: 0.1" Text="{Binding Iron}" Keyboard="Numeric" MaxLength="5" FontSize="15" />
+                        </Border>
+                        <Label Text="{Binding IronWarning}" TextColor="#EF4444" FontSize="11" Margin="4,2,0,0" IsVisible="{Binding IsIronValid, Converter={StaticResource InverseBoolConverter}}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- E.Coli Section -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,14">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <Grid ColumnDefinitions="*, Auto">
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Text="🦠 E. Coli Ausente?" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+                        <Label Text="Marque se o teste bacteriológico foi negativo" FontSize="11" TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                    <Switch Grid.Column="1" IsToggled="{Binding EColiAbsent}" OnColor="{StaticResource StatusSafe}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- GAP 1: GPS do Ponto de Coleta -->
+            <Border StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.05" /></Border.Shadow>
+                <VerticalStackLayout Spacing="14">
+
+                    <Label Text="📍 Localização da Coleta" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" />
+
+                    <!-- Feedback de localização capturada -->
+                    <Border IsVisible="{Binding LocationCaptured}"
+                            StrokeShape="RoundRectangle 10" Stroke="Transparent"
+                            BackgroundColor="#D1FAE5" Padding="14,10">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Grid.Column="0" Text="{Binding LocationDisplay}"
+                                   FontSize="13" FontAttributes="Bold" TextColor="#065F46"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="✓" FontSize="16" TextColor="#10B981"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- BOTÃO PRIMÁRIO: Usar GPS -->
+                    <Button Text="📍 Usar Minha Localização Atual"
+                            Command="{Binding CaptureCollectionLocationCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            FontSize="15" FontAttributes="Bold"
+                            HeightRequest="52" CornerRadius="12"
+                            TextColor="White">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#0891B2" Offset="0.0" />
+                                <GradientStop Color="#06B6D4" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <Button.Shadow><Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.3" /></Button.Shadow>
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsCapturingLocation}" Value="True">
+                                <Setter Property="Text" Value="🔄 Buscando GPS..." />
+                                <Setter Property="Opacity" Value="0.7" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+
+                    <!-- BOTÃO SECUNDÁRIO: Marcar no mapa -->
+                    <Button Text="{Binding MapPickerButtonText}"
+                            Command="{Binding ToggleMapPickerCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            FontSize="13"
+                            HeightRequest="40" CornerRadius="10"
+                            TextColor="{AppThemeBinding Light=#0369A1, Dark=#38BDF8}"
+                            BackgroundColor="{AppThemeBinding Light=#E0F2FE, Dark=#0C4A6E}" />
+
+                    <!-- Mapa Leaflet Picker -->
+                    <Border IsVisible="{Binding IsMapPickerVisible}"
+                            StrokeShape="RoundRectangle 12"
+                            Stroke="{AppThemeBinding Light=#BAE6FD, Dark=#0369A1}"
+                            HeightRequest="300"
+                            Padding="0">
+                        <WebView x:Name="MapPickerWebView"
+                                 HorizontalOptions="Fill"
+                                 VerticalOptions="Fill" />
+                    </Border>
+
+                    <!-- LINK TERCIÁRIO: Coordenadas manuais -->
+                    <Button Text="{Binding ManualInputButtonText}"
+                            Command="{Binding ToggleManualInputCommand}"
+                            FontSize="11"
+                            HeightRequest="32" CornerRadius="8"
+                            TextColor="{StaticResource TextMuted}"
+                            BackgroundColor="Transparent" />
+
+                    <!-- Entradas manuais (fallback) -->
+                    <VerticalStackLayout IsVisible="{Binding IsManualInputVisible}" Spacing="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Latitude" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                            <Border StrokeShape="RoundRectangle 10"
+                                    Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                                    BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}"
+                                    Padding="14,2" HeightRequest="44">
+                                <Entry Placeholder="Ex: -20.763600"
+                                       Text="{Binding CollectionLatitude}"
+                                       Keyboard="Numeric" MaxLength="12" FontSize="14" />
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Longitude" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                            <Border StrokeShape="RoundRectangle 10"
+                                    Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                                    BackgroundColor="{AppThemeBinding Light=#F8FAFC, Dark=#0F172A}"
+                                    Padding="14,2" HeightRequest="44">
+                                <Entry Placeholder="Ex: -41.533300"
+                                       Text="{Binding CollectionLongitude}"
+                                       Keyboard="Numeric" MaxLength="12" FontSize="14" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Enviar Coleta" Command="{Binding SubmitCommand}" IsEnabled="{Binding IsNotBusy}" FontSize="16" FontAttributes="Bold" HeightRequest="52" CornerRadius="14" TextColor="White" Margin="0,4,0,0">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#0891B2" Offset="0.0" />
+                        <GradientStop Color="#06B6D4" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Button.Background>
+                <Button.Shadow><Shadow Brush="#0891B2" Offset="0,4" Radius="12" Opacity="0.35" /></Button.Shadow>
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsBusy}" Value="True">
+                        <Setter Property="Text" Value="Enviando..." />
+                        <Setter Property="Opacity" Value="0.6" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource AquaPrimary}" HorizontalOptions="Center" />
+
+            <!-- Status Message -->
+            <Border IsVisible="{Binding HasStatus}" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="16,12" Margin="0,0,0,10">
+                <Border.Triggers>
+                    <DataTrigger TargetType="Border" Binding="{Binding IsSuccess}" Value="True">
+                        <Setter Property="BackgroundColor" Value="#D1FAE5" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Border" Binding="{Binding IsSuccess}" Value="False">
+                        <Setter Property="BackgroundColor" Value="#FEE2E2" />
+                    </DataTrigger>
+                </Border.Triggers>
+                <Label Text="{Binding StatusMessage}" FontSize="13" HorizontalTextAlignment="Center" HorizontalOptions="Center">
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label" Binding="{Binding IsSuccess}" Value="True">
+                            <Setter Property="TextColor" Value="#10B981" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label" Binding="{Binding IsSuccess}" Value="False">
+                            <Setter Property="TextColor" Value="#EF4444" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

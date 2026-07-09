@@ -361,3 +361,13 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Environment secrets
+.env
+
+# Claude Code tooling (local assistant config, not part of the product)
+.claude/
+CLAUDE.md
+
+# graphify generated knowledge graph (local cache, regenerate with `graphify update .`)
+graphify-out/

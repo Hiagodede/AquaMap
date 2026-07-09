@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AquaMap.ViewModels"
+             xmlns:models="clr-namespace:AquaMap.Domain.Entities;assembly=AquaMap.Domain"
+             x:Class="AquaMap.Views.ReservoirDetailPage"
+             x:DataType="vm:ReservoirDetailViewModel"
+             Title="{Binding ReservoirName}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Exportar PDF" Command="{Binding ExportPdfCommand}" />
+        <ToolbarItem Text="Editar" Command="{Binding EditReservoirCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid>
+        <!-- Activity indicator shown during loading overlay -->
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource AquaPrimary}" VerticalOptions="Center" HorizontalOptions="Center" HeightRequest="40" WidthRequest="40" ZIndex="10" />
+
+        <!-- Scrollable content via CollectionView -->
+        <CollectionView ItemsSource="{Binding AnalysisHistory}" Margin="16,12,16,8">
+            
+            <!-- CollectionView Header containing top cards so they scroll together on high system font sizes -->
+            <CollectionView.Header>
+                <VerticalStackLayout Spacing="16" Margin="0,0,0,12">
+                    
+                    <!-- Header Banner -->
+                    <Border StrokeShape="RoundRectangle 16" Stroke="Transparent" Padding="24,20,24,18">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#155E75" Offset="0.0" />
+                                <GradientStop Color="#0891B2" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding ReservoirName}" FontSize="20" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Histórico de análises de qualidade" FontSize="13" TextColor="#A5F3FC" Opacity="0.85" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Status Card (Latest Analysis Info) -->
+                    <Border IsVisible="{Binding HasLatestAnalysis}" StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Padding="18,16">
+                        <Border.Shadow>
+                            <Shadow Brush="#000000" Offset="0,4" Radius="10" Opacity="0.05" />
+                        </Border.Shadow>
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="16">
+                            <!-- Status icon -->
+                            <Border Grid.Column="0" WidthRequest="52" HeightRequest="52" StrokeShape="RoundRectangle 26" Stroke="Transparent" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding LatestAnalysis.IsPotable}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="#D1FAE5" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Border" Binding="{Binding LatestAnalysis.IsPotable}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="#FEE2E2" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Label HorizontalOptions="Center" VerticalOptions="Center" FontSize="26">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding LatestAnalysis.IsPotable}" Value="True">
+                                            <Setter Property="Text" Value="💧" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding LatestAnalysis.IsPotable}" Value="False">
+                                            <Setter Property="Text" Value="⚠️" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Border>
+                            
+                            <!-- Status Details -->
+                            <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                                    <Label Text="Situação Atual:" FontSize="13" TextColor="{StaticResource TextMuted}" VerticalOptions="Center" />
+                                    <Label FontSize="14" FontAttributes="Bold" VerticalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding LatestAnalysis.IsPotable}" Value="True">
+                                                <Setter Property="Text" Value="ÁGUA POTÁVEL" />
+                                                <Setter Property="TextColor" Value="#10B981" />
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding LatestAnalysis.IsPotable}" Value="False">
+                                                <Setter Property="Text" Value="ÁGUA IMPRÓPRIA" />
+                                                <Setter Property="TextColor" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </HorizontalStackLayout>
+                                
+                                <Label FontSize="12" TextColor="{StaticResource TextSecondary}">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding LatestAnalysis.IsPotable}" Value="True">
+                                            <Setter Property="Text" Value="Todos os indicadores da última análise estão em conformidade com as regras de potabilidade da Portaria 888." />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding LatestAnalysis.IsPotable}" Value="False">
+                                            <Setter Property="Text" Value="Atenção: A última análise registrou parâmetros químicos ou bacteriológicos fora dos limites recomendados." />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+            </CollectionView.Header>
+
+            <!-- CollectionView Empty View -->
+            <CollectionView.EmptyView>
+                <VerticalStackLayout IsVisible="{Binding IsEmpty}" VerticalOptions="Center" HorizontalOptions="Center" Spacing="10" Padding="40" Margin="0,20,0,0">
+                    <Label Text="📋" FontSize="48" HorizontalOptions="Center" />
+                    <Label Text="Nenhuma análise registrada" FontSize="17" FontAttributes="Bold" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
+                    <Label Text="Faça uma coleta na aba Técnico para ver o histórico aqui." FontSize="13" TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <!-- CollectionView Item Template -->
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:WaterAnalysis">
+                    <Border Margin="0,6" Padding="16,14" StrokeShape="RoundRectangle 16" Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}">
+                        <Border.Shadow><Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.06" /></Border.Shadow>
+                        <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="10">
+
+                            <!-- Data + Status -->
+                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                <Label Text="{Binding AnalysisDate, StringFormat='{0:dd/MM/yyyy HH:mm}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" VerticalOptions="Center" />
+                                
+                                <!-- Sync Badge -->
+                                <Border Grid.Column="1" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="8,4" Margin="0,0,8,0" VerticalOptions="Center">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsPendingSync}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="#FEF3C7" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsPendingSync}" Value="False">
+                                            <Setter Property="BackgroundColor" Value="#ECFDF5" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                        <Label FontSize="11" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="True">
+                                                    <Setter Property="Text" Value="⏳" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="False">
+                                                    <Setter Property="Text" Value="☁️" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label FontSize="10" FontAttributes="Bold" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="True">
+                                                    <Setter Property="Text" Value="Pendente" />
+                                                    <Setter Property="TextColor" Value="#D97706" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsPendingSync}" Value="False">
+                                                    <Setter Property="Text" Value="Sincronizado" />
+                                                    <Setter Property="TextColor" Value="#059669" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </HorizontalStackLayout>
+                                </Border>
+
+                                <Border Grid.Column="2" StrokeShape="RoundRectangle 8" Stroke="Transparent" Padding="10,4" VerticalOptions="Center">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsPotable}" Value="True"><Setter Property="BackgroundColor" Value="#D1FAE5" /></DataTrigger>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsPotable}" Value="False"><Setter Property="BackgroundColor" Value="#FEE2E2" /></DataTrigger>
+                                    </Border.Triggers>
+                                    <Label FontSize="11" FontAttributes="Bold">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsPotable}" Value="True"><Setter Property="Text" Value="Potável" /><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsPotable}" Value="False"><Setter Property="Text" Value="Imprópria" /><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </Border>
+                            </Grid>
+
+                            <!-- Parâmetros -->
+                            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="Cloro" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding ResidualChlorine, StringFormat='{0:F2}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsChlorineValid}" Value="False">
+                                                <Setter Property="TextColor" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                    <Label Text="pH" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding Ph, StringFormat='{0:F1}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsPhValid}" Value="False">
+                                                <Setter Property="TextColor" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                    <Label Text="Turbidez" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding Turbidity, StringFormat='{0:F1}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsTurbidityValid}" Value="False">
+                                                <Setter Property="TextColor" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="3" Spacing="2">
+                                    <Label Text="Ferro" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding Iron, StringFormat='{0:F2}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsIronValid}" Value="False">
+                                                <Setter Property="TextColor" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="4" Spacing="2">
+                                    <Label Text="E.Coli" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    <Label FontSize="14" FontAttributes="Bold">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding EColiAbsent}" Value="True"><Setter Property="Text" Value="Ausente" /><Setter Property="TextColor" Value="#10B981" /></DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding EColiAbsent}" Value="False"><Setter Property="Text" Value="Presente" /><Setter Property="TextColor" Value="#EF4444" /></DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                            </Grid>
+
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
