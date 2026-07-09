@@ -8,16 +8,24 @@ O AquaMap é uma aplicação multiplataforma (Mobile/Desktop) desenvolvida em .N
 O projeto segue estritamente a separação de responsabilidades para garantir manutenção e testes.
 
 Estrutura da Solução
-A solução está dividida em 4 projetos distintos. É proibido que a camada de Domínio conheça a camada de Tela ou Banco de Dados.
+A solução está dividida em projetos distintos, incluindo dois apps MAUI (AquaMap para o técnico do SAAE, AquaMap.Public somente leitura para o cidadão) que compartilham o mesmo backend. É proibido que a camada de Domínio conheça a camada de Tela ou Banco de Dados.
 
 Plaintext
 
 📂 AquaMap.sln
- ├── 📂 AquaMap (Camada de Apresentação / UI)
+ ├── 📂 AquaMap (Camada de Apresentação / UI - App Técnico)
  │    ├── 📂 ViewModels       # Lógica de apresentação (MVVM)
  │    ├── 📂 Views            # Telas (XAML) - Atualmente MainPage na raiz
  │    ├── 📄 MauiProgram.cs   # Injeção de Dependência e Configuração
  │    └── 📄 AppShell.xaml    # Navegação central
+ │
+ ├── 📂 AquaMap.Public (Apresentação - App Cidadão, somente leitura, sem autenticação)
+ │    ├── 📂 ViewModels
+ │    └── 📂 Views
+ │
+ ├── 📂 AquaMap.Client.Shared (código client compartilhado pelos dois apps acima)
+ │    ├── 📄 ApiService.cs         # Cliente HTTP da AquaMap.Api
+ │    └── 📄 ApiClientFactory.cs   # Resolve BaseUrl a partir do appsettings.json de cada app
  │
  ├── 📂 AquaMap.Domain (Camada Core - Pura)
  │    └── 📂 Entities         # Modelos (User, Reservoir, Neighborhood, WaterAnalysis)
