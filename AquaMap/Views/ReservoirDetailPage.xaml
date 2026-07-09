@@ -9,6 +9,7 @@
              BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}">
 
     <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Exportar PDF" Command="{Binding ExportPdfCommand}" />
         <ToolbarItem Text="Editar" Command="{Binding EditReservoirCommand}" />
     </ContentPage.ToolbarItems>
 
@@ -170,7 +171,7 @@
                             </Grid>
 
                             <!-- Parâmetros -->
-                            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+                            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
                                 <VerticalStackLayout Spacing="2">
                                     <Label Text="Cloro" FontSize="10" TextColor="{StaticResource TextMuted}" />
                                     <Label Text="{Binding ResidualChlorine, StringFormat='{0:F2}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}">
@@ -202,6 +203,16 @@
                                     </Label>
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Grid.Column="3" Spacing="2">
+                                    <Label Text="Ferro" FontSize="10" TextColor="{StaticResource TextMuted}" />
+                                    <Label Text="{Binding Iron, StringFormat='{0:F2}'}" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsIronValid}" Value="False">
+                                                <Setter Property="TextColor" Value="#EF4444" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="4" Spacing="2">
                                     <Label Text="E.Coli" FontSize="10" TextColor="{StaticResource TextMuted}" />
                                     <Label FontSize="14" FontAttributes="Bold">
                                         <Label.Triggers>

@@ -21,14 +21,44 @@
             <Border.Shadow>
                 <Shadow Brush="#155E75" Offset="0,4" Radius="16" Opacity="0.3" />
             </Border.Shadow>
-            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
-                <Image Source="aquamap_logo.png" HeightRequest="44" WidthRequest="44" VerticalOptions="Center" />
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-                    <Label Text="AquaMap" FontSize="22" FontAttributes="Bold" TextColor="White" />
-                    <Label Text="Pontos de monitoramento" FontSize="12" TextColor="#A5F3FC" Opacity="0.85" />
-                </VerticalStackLayout>
-                <Button Grid.Column="2" Text="+" Command="{Binding AddReservoirCommand}" FontSize="22" FontAttributes="Bold" TextColor="White" BackgroundColor="#06B6D4" CornerRadius="12" WidthRequest="44" HeightRequest="44" Padding="0" VerticalOptions="Center" />
-            </Grid>
+            <VerticalStackLayout Spacing="16">
+                <!-- Top Row (Logo + Add) -->
+                <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="14">
+                    <Image Source="aquamap_logo.png" HeightRequest="44" WidthRequest="44" VerticalOptions="Center" />
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="AquaMap" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                        <Label Text="Painel Técnico e Coletas" FontSize="12" TextColor="#A5F3FC" Opacity="0.85" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="2" Text="+" Command="{Binding AddReservoirCommand}" FontSize="22" FontAttributes="Bold" TextColor="White" BackgroundColor="#06B6D4" CornerRadius="12" WidthRequest="44" HeightRequest="44" Padding="0" VerticalOptions="Center" />
+                </Grid>
+
+                <!-- GAP 5: Dashboard Metrics Cards -->
+                <Grid ColumnDefinitions="*, *, *" ColumnSpacing="8" Margin="0,4,0,0">
+                    <Border Grid.Column="0" StrokeShape="RoundRectangle 12" Stroke="Transparent" BackgroundColor="#FFFFFF" Opacity="0.9" Padding="10">
+                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                            <Label Text="📍" FontSize="20" HorizontalOptions="Center" />
+                            <Label Text="{Binding TotalReservoirs}" FontSize="18" FontAttributes="Bold" TextColor="#0F172A" HorizontalOptions="Center" />
+                            <Label Text="Monitorados" FontSize="10" TextColor="#475569" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    
+                    <Border Grid.Column="1" StrokeShape="RoundRectangle 12" Stroke="Transparent" BackgroundColor="#FFFFFF" Opacity="0.9" Padding="10">
+                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                            <Label Text="🧪" FontSize="20" HorizontalOptions="Center" />
+                            <Label Text="{Binding TotalAnalyses}" FontSize="18" FontAttributes="Bold" TextColor="#0F172A" HorizontalOptions="Center" />
+                            <Label Text="Coletas Totais" FontSize="10" TextColor="#475569" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    
+                    <Border Grid.Column="2" StrokeShape="RoundRectangle 12" Stroke="Transparent" BackgroundColor="#FFFFFF" Opacity="0.9" Padding="10">
+                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                            <Label Text="⚠️" FontSize="20" HorizontalOptions="Center" />
+                            <Label Text="{Binding ReservoirsAlert}" FontSize="18" FontAttributes="Bold" TextColor="#EF4444" HorizontalOptions="Center" />
+                            <Label Text="Em Alerta" FontSize="10" TextColor="#475569" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
         </Border>
 
         <!-- Search Bar -->

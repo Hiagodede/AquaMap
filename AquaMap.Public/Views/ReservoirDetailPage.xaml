@@ -57,6 +57,12 @@
                                         </Label>
                                     </VerticalStackLayout>
                                 </Grid>
+                                <Grid ColumnDefinitions="*,*">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="🧲 Ferro" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
+                                        <Label Text="{Binding Iron, StringFormat='{0:F2} mg/L'}" FontSize="16" TextColor="#0284C7" />
+                                    </VerticalStackLayout>
+                                </Grid>
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>
