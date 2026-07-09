@@ -7,13 +7,14 @@ using System.Windows.Input;
 using Microsoft.Maui.Networking;
 using AquaMap.Domain.Entities;
 using AquaMap.Domain.Interfaces;
+using AquaMap.Client.Shared;
 using System.Linq;
 
 namespace AquaMap.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        private readonly Services.ApiService _apiService;
+        private readonly ApiService _apiService;
         private readonly Services.LocalDatabaseService _localDbService;
         private System.Collections.Generic.List<Reservoir> _allPoints = new();
         private string _searchText = string.Empty;
@@ -56,7 +57,7 @@ namespace AquaMap.ViewModels
         public ICommand OpenDetailCommand { get; }
         public ICommand AddReservoirCommand { get; }
 
-        public MainViewModel(Services.ApiService apiService, Services.LocalDatabaseService localDbService)
+        public MainViewModel(ApiService apiService, Services.LocalDatabaseService localDbService)
         {
             _apiService = apiService;
             _localDbService = localDbService;
@@ -203,7 +204,17 @@ namespace AquaMap.ViewModels
             }
             OnPropertyChanged(nameof(IsEmpty));
             OnPropertyChanged(nameof(HasData));
+            
+            // Atualizar Dashboard Metrics
+            OnPropertyChanged(nameof(TotalReservoirs));
+            OnPropertyChanged(nameof(TotalAnalyses));
+            OnPropertyChanged(nameof(ReservoirsAlert));
         }
+
+        // GAP 5: Métricas do Dashboard
+        public int TotalReservoirs => _allPoints.Count;
+        public int TotalAnalyses => _allPoints.Sum(r => r.WaterAnalyses?.Count ?? 0);
+        public int ReservoirsAlert => _allPoints.Count(r => r.StatusColor == "Red");
 
         // Boilerplate do MVVM (padrão para avisar a tela que algo mudou)
         public event PropertyChangedEventHandler? PropertyChanged;

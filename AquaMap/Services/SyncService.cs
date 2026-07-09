@@ -6,6 +6,7 @@ using Microsoft.Maui.Devices;
 using Microsoft.Maui.Storage;
 using AquaMap.Models;
 using AquaMap.Domain.Entities;
+using AquaMap.Client.Shared;
 
 namespace AquaMap.Services
 {

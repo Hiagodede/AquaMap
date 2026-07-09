@@ -1,10 +1,9 @@
-using AquaMap.Services;   
-using AquaMap.ViewModels;  
+using AquaMap.Services;
+using AquaMap.ViewModels;
 using AquaMap.Views;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Maui.Devices;
+using AquaMap.Client.Shared;
 using AquaMap.Controls;
 
 #if ANDROID
@@ -49,46 +48,15 @@ namespace AquaMap
             });
 #endif
 
-            // --- CARREGAR ARQUIVOS DE CONFIGURAÇÃO (appsettings.json) ---
-            var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("AquaMap.appsettings.json");
-            if (stream != null)
-            {
-                builder.Configuration.AddJsonStream(stream);
-            }
-
-#if DEBUG
-            using var devStream = assembly.GetManifestResourceStream("AquaMap.appsettings.Development.json");
-            if (devStream != null)
-            {
-                builder.Configuration.AddJsonStream(devStream);
-            }
-#endif
-
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
 
-            // --- INJEÇÃO DA URL SEM HARDCODING ---
-            var apiSettings = builder.Configuration.GetSection("ApiSettings");
-            string? baseUrl = apiSettings["BaseUrl"];
-
-#if DEBUG
-            // Em desenvolvimento local, puxamos os IPs corretos baseados no emulador/sistema
-            baseUrl = DeviceInfo.Platform == DevicePlatform.Android 
-                ? apiSettings["BaseUrlAndroid"] 
-                : apiSettings["BaseUrlWindows"];
-#endif
-
-            if (string.IsNullOrEmpty(baseUrl))
-            {
-                throw new InvalidOperationException("A URL base da API não foi configurada nas configurações do aplicativo (appsettings.json).");
-            }
-
             // --- REGISTRAR SERVIÇOS DE API E LOCAIS ---
-            builder.Services.AddSingleton(new ApiService(new System.Net.Http.HttpClient { BaseAddress = new System.Uri(baseUrl) }));
+            builder.Services.AddSingleton(new ApiService(ApiClientFactory.Create(Assembly.GetExecutingAssembly())));
             builder.Services.AddSingleton<LocalDatabaseService>();
             builder.Services.AddSingleton<SyncService>();
+            builder.Services.AddSingleton<PdfExportService>();
 
             // --- REGISTRAR TELAS E VIEWMODELS ---
             builder.Services.AddTransient<MainViewModel>();

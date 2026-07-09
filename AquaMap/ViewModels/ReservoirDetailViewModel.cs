@@ -7,6 +7,7 @@ using System.Windows.Input;
 using Microsoft.Maui.Networking;
 using AquaMap.Domain.Entities;
 using AquaMap.Services;
+using AquaMap.Client.Shared;
 using System.Linq;
 
 namespace AquaMap.ViewModels
@@ -71,12 +72,15 @@ namespace AquaMap.ViewModels
 
         public ICommand LoadHistoryCommand { get; }
         public ICommand EditReservoirCommand { get; }
+        public ICommand ExportPdfCommand { get; } // GAP 3
 
-        public ReservoirDetailViewModel(ApiService apiService, LocalDatabaseService localDbService)
+        public ReservoirDetailViewModel(ApiService apiService, LocalDatabaseService localDbService, PdfExportService pdfExportService)
         {
             _apiService = apiService;
             _localDbService = localDbService;
+            
             LoadHistoryCommand = new Command(async () => await LoadHistoryAsync());
+            
             EditReservoirCommand = new Command(async () =>
             {
                 if (IsBusy) return;
@@ -84,6 +88,32 @@ namespace AquaMap.ViewModels
                 try
                 {
                     await Shell.Current.GoToAsync($"ReservoirFormPage?ReservoirId={ReservoirId}&ReservoirName={Uri.EscapeDataString(ReservoirName)}");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            });
+
+            ExportPdfCommand = new Command(async () =>
+            {
+                if (IsBusy || AnalysisHistory.Count == 0) return;
+                IsBusy = true;
+                try
+                {
+                    var filePath = pdfExportService.GenerateReservoirReport(ReservoirName, AnalysisHistory);
+                    await Shell.Current.DisplayAlert("Boletim Gerado", $"PDF salvo em:\n{filePath}", "OK");
+                    
+                    // Share the file
+                    await Microsoft.Maui.ApplicationModel.DataTransfer.Share.Default.RequestAsync(new ShareFileRequest
+                    {
+                        Title = "Boletim de Qualidade da Água",
+                        File = new ShareFile(filePath)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Shell.Current.DisplayAlert("Erro", $"Falha ao exportar PDF: {ex.Message}", "OK");
                 }
                 finally
                 {
@@ -111,6 +141,9 @@ namespace AquaMap.ViewModels
                         Ph = c.Ph,
                         Turbidity = c.Turbidity,
                         EColiAbsent = c.EColiAbsent,
+                        Iron = c.Iron,
+                        CollectionLatitude = c.CollectionLatitude,
+                        CollectionLongitude = c.CollectionLongitude,
                         ReservoirId = c.ReservoirId,
                         IsPendingSync = c.IsPendingSync
                     }).ToList();
@@ -145,6 +178,9 @@ namespace AquaMap.ViewModels
                             Ph = a.Ph,
                             Turbidity = a.Turbidity,
                             EColiAbsent = a.EColiAbsent,
+                            Iron = a.Iron,
+                            CollectionLatitude = a.CollectionLatitude,
+                            CollectionLongitude = a.CollectionLongitude,
                             ReservoirId = a.ReservoirId,
                             IsPendingSync = false
                         }).ToList();
@@ -167,6 +203,9 @@ namespace AquaMap.ViewModels
                                     Ph = c.Ph,
                                     Turbidity = c.Turbidity,
                                     EColiAbsent = c.EColiAbsent,
+                                    Iron = c.Iron,
+                                    CollectionLatitude = c.CollectionLatitude,
+                                    CollectionLongitude = c.CollectionLongitude,
                                     ReservoirId = c.ReservoirId,
                                     IsPendingSync = c.IsPendingSync
                                 };

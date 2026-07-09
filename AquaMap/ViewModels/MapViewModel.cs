@@ -1,4 +1,5 @@
 using AquaMap.Domain.Entities;
+using AquaMap.Client.Shared;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -9,7 +10,7 @@ namespace AquaMap.ViewModels
 {
     public class MapViewModel : INotifyPropertyChanged
     {
-        private readonly Services.ApiService _apiService;
+        private readonly ApiService _apiService;
 
         public ObservableCollection<Reservoir> MapPins { get; set; } = new();
         public ObservableCollection<AquaMap.Controls.CustomPin> NativePins { get; set; } = new();
@@ -30,7 +31,7 @@ namespace AquaMap.ViewModels
 
         public ICommand LoadMapCommand { get; }
 
-        public MapViewModel(Services.ApiService apiService)
+        public MapViewModel(ApiService apiService)
         {
             _apiService = apiService;
             LoadMapCommand = new Command(async () => await LoadMapDataAsync());

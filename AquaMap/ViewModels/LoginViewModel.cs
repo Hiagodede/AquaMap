@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Maui.Storage;
 using AquaMap.Services;
+using AquaMap.Client.Shared;
 
 namespace AquaMap.ViewModels
 {

@@ -72,15 +72,16 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
 		<PackageReference Include="Microsoft.Maui.Controls.Maps" Version="$(MauiVersion)" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.8" />
 		<PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.1.8" />
+		<PackageReference Include="QuestPDF" Version="2024.3.4" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\AquaMap.Domain\AquaMap.Domain.csproj" />
+	  <ProjectReference Include="..\AquaMap.Client.Shared\AquaMap.Client.Shared.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -8,6 +8,7 @@ using System.Windows.Input;
 using Microsoft.Maui.Storage;
 using AquaMap.Domain.Entities;
 using AquaMap.Services;
+using AquaMap.Client.Shared;
 using AquaMap.Models;
 using Microsoft.Maui.Networking;
 
@@ -154,16 +155,71 @@ namespace AquaMap.ViewModels
             set { _ironWarning = value; OnPropertyChanged(); }
         }
 
-        // GAP 1 — GPS do ponto de coleta
-        private double? _collectionLatitude;
-        private double? _collectionLongitude;
+        // GAP 1 — GPS do ponto de coleta (UX 3 Modos)
+        private double? _internalLatitude;
+        private double? _internalLongitude;
+        private string _collectionLatitude = string.Empty;
+        private string _collectionLongitude = string.Empty;
+        private bool _isFormattingCoord = false;
 
-        private string _locationStatus = string.Empty;
-        public string LocationStatus
+        public string CollectionLatitude
         {
-            get => _locationStatus;
-            set { _locationStatus = value; OnPropertyChanged(); }
+            get => _collectionLatitude;
+            set
+            {
+                if (_isFormattingCoord) { _collectionLatitude = value; return; }
+                _isFormattingCoord = true;
+                _collectionLatitude = SanitizeCoordinate(value ?? "");
+                OnPropertyChanged();
+                _isFormattingCoord = false;
+                SaveDraft();
+            }
         }
+
+        public string CollectionLongitude
+        {
+            get => _collectionLongitude;
+            set
+            {
+                if (_isFormattingCoord) { _collectionLongitude = value; return; }
+                _isFormattingCoord = true;
+                _collectionLongitude = SanitizeCoordinate(value ?? "");
+                OnPropertyChanged();
+                _isFormattingCoord = false;
+                SaveDraft();
+            }
+        }
+
+        private bool _locationCaptured;
+        public bool LocationCaptured
+        {
+            get => _locationCaptured;
+            set { _locationCaptured = value; OnPropertyChanged(); OnPropertyChanged(nameof(LocationNotCaptured)); }
+        }
+        public bool LocationNotCaptured => !_locationCaptured;
+
+        private string _locationDisplay = string.Empty;
+        public string LocationDisplay
+        {
+            get => _locationDisplay;
+            set { _locationDisplay = value; OnPropertyChanged(); }
+        }
+
+        private bool _isMapPickerVisible;
+        public bool IsMapPickerVisible
+        {
+            get => _isMapPickerVisible;
+            set { _isMapPickerVisible = value; OnPropertyChanged(); OnPropertyChanged(nameof(MapPickerButtonText)); }
+        }
+        public string MapPickerButtonText => IsMapPickerVisible ? "🗺️ Fechar mapa" : "🗺️ Marcar no mapa manualmente";
+
+        private bool _isManualInputVisible;
+        public bool IsManualInputVisible
+        {
+            get => _isManualInputVisible;
+            set { _isManualInputVisible = value; OnPropertyChanged(); OnPropertyChanged(nameof(ManualInputButtonText)); }
+        }
+        public string ManualInputButtonText => IsManualInputVisible ? "▲ Ocultar campos manuais" : "Inserir coordenadas manualmente";
 
         private bool _isCapturingLocation;
         public bool IsCapturingLocation
@@ -208,6 +264,8 @@ namespace AquaMap.ViewModels
         public ICommand LogoutCommand { get; }
         public ICommand ManageUsersCommand { get; }
         public ICommand CaptureCollectionLocationCommand { get; }
+        public ICommand ToggleMapPickerCommand { get; }
+        public ICommand ToggleManualInputCommand { get; }
 
         public CollectionFormViewModel(ApiService apiService, LocalDatabaseService localDbService, SyncService syncService)
         {
@@ -218,6 +276,16 @@ namespace AquaMap.ViewModels
             LoadReservoirsCommand = new Command(async () => await LoadReservoirsAsync());
             LogoutCommand = new Command(async () => await LogoutAsync());
             CaptureCollectionLocationCommand = new Command(async () => await CaptureCollectionLocationAsync());
+            ToggleMapPickerCommand = new Command(() =>
+            {
+                IsMapPickerVisible = !IsMapPickerVisible;
+                if (IsMapPickerVisible) IsManualInputVisible = false;
+            });
+            ToggleManualInputCommand = new Command(() =>
+            {
+                IsManualInputVisible = !IsManualInputVisible;
+                if (IsManualInputVisible) IsMapPickerVisible = false;
+            });
             ManageUsersCommand = new Command(async () => 
             {
                 if (IsBusy) return;
@@ -251,6 +319,14 @@ namespace AquaMap.ViewModels
             _turbidity = Preferences.Default.Get("Draft_Collection_Turbidity", string.Empty);
             _eColiAbsent = Preferences.Default.Get("Draft_Collection_EColiAbsent", true);
             _iron = Preferences.Default.Get("Draft_Collection_Iron", string.Empty);
+            _collectionLatitude = Preferences.Default.Get("Draft_Collection_Lat", string.Empty);
+            _collectionLongitude = Preferences.Default.Get("Draft_Collection_Lng", string.Empty);
+
+            if (!string.IsNullOrWhiteSpace(_collectionLatitude) && !string.IsNullOrWhiteSpace(_collectionLongitude))
+            {
+                LocationDisplay = $"📍 {_collectionLatitude}, {_collectionLongitude}";
+                LocationCaptured = true;
+            }
         }
 
         private void ClearDraft()
@@ -373,11 +449,28 @@ namespace AquaMap.ViewModels
         }
 
         // GAP 1 — Captura de GPS do ponto de coleta
+        public void SetLocationFromMap(double lat, double lng)
+        {
+            _internalLatitude = lat;
+            _internalLongitude = lng;
+            _isFormattingCoord = true;
+            CollectionLatitude = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            CollectionLongitude = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _isFormattingCoord = false;
+            OnPropertyChanged(nameof(CollectionLatitude));
+            OnPropertyChanged(nameof(CollectionLongitude));
+            LocationDisplay = $"📍 {lat:F5}, {lng:F5}";
+            LocationCaptured = true;
+            IsMapPickerVisible = false;
+            try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
+        }
+
         private async Task CaptureCollectionLocationAsync()
         {
             if (IsCapturingLocation) return;
             IsCapturingLocation = true;
-            LocationStatus = "Buscando localização...";
+            LocationDisplay = "Buscando localização...";
+            LocationCaptured = false;
             try
             {
                 var location = await Microsoft.Maui.Devices.Sensors.Geolocation.Default.GetLocationAsync(
@@ -386,19 +479,27 @@ namespace AquaMap.ViewModels
                         TimeSpan.FromSeconds(10)));
                 if (location != null)
                 {
-                    _collectionLatitude = location.Latitude;
-                    _collectionLongitude = location.Longitude;
-                    LocationStatus = $"📍 {location.Latitude:F5}, {location.Longitude:F5}";
+                    _internalLatitude = location.Latitude;
+                    _internalLongitude = location.Longitude;
+                    _isFormattingCoord = true;
+                    CollectionLatitude = location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    CollectionLongitude = location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    _isFormattingCoord = false;
+                    OnPropertyChanged(nameof(CollectionLatitude));
+                    OnPropertyChanged(nameof(CollectionLongitude));
+                    LocationDisplay = $"📍 {location.Latitude:F5}, {location.Longitude:F5}";
+                    LocationCaptured = true;
+                    SaveDraft();
                     try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
                 }
                 else
                 {
-                    LocationStatus = "Localização não disponível.";
+                    LocationDisplay = "Localização não disponível.";
                 }
             }
             catch (Exception)
             {
-                LocationStatus = "Ative o GPS e tente novamente.";
+                LocationDisplay = "Ative o GPS e tente novamente.";
             }
             finally
             {
@@ -546,6 +647,18 @@ namespace AquaMap.ViewModels
                 // Parse do Ferro (opcional, padrão 0)
                 double.TryParse(Iron?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double ironVal);
 
+                // Resolver coordenadas da coleta
+                double? finalLat = _internalLatitude, finalLng = _internalLongitude;
+                if (!finalLat.HasValue && !string.IsNullOrWhiteSpace(CollectionLatitude) && !string.IsNullOrWhiteSpace(CollectionLongitude))
+                {
+                    if (double.TryParse(CollectionLatitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l1) &&
+                        double.TryParse(CollectionLongitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l2))
+                    {
+                        finalLat = l1;
+                        finalLng = l2;
+                    }
+                }
+
                 // Criar entidade local do banco de dados SQLite com IsPendingSync = true
                 var localAnalysis = new LocalWaterAnalysis
                 {
@@ -555,8 +668,8 @@ namespace AquaMap.ViewModels
                     Turbidity = turbidityVal,
                     EColiAbsent = EColiAbsent,
                     Iron = ironVal,
-                    CollectionLatitude = _collectionLatitude,
-                    CollectionLongitude = _collectionLongitude,
+                    CollectionLatitude = finalLat,
+                    CollectionLongitude = finalLng,
                     ReservoirId = SelectedReservoir.Id,
                     IsPendingSync = true
                 };
@@ -580,15 +693,22 @@ namespace AquaMap.ViewModels
                 _iron = "";
                 _selectedReservoir = null;
                 _eColiAbsent = true;
-                _collectionLatitude = null;
-                _collectionLongitude = null;
-                LocationStatus = string.Empty;
+                _internalLatitude = null;
+                _internalLongitude = null;
+                _collectionLatitude = "";
+                _collectionLongitude = "";
+                LocationDisplay = string.Empty;
+                LocationCaptured = false;
+                IsMapPickerVisible = false;
+                IsManualInputVisible = false;
                 OnPropertyChanged(nameof(ResidualChlorine));
                 OnPropertyChanged(nameof(Ph));
                 OnPropertyChanged(nameof(Turbidity));
                 OnPropertyChanged(nameof(Iron));
                 OnPropertyChanged(nameof(SelectedReservoir));
                 OnPropertyChanged(nameof(EColiAbsent));
+                OnPropertyChanged(nameof(CollectionLatitude));
+                OnPropertyChanged(nameof(CollectionLongitude));
 
                 // Reset warnings
                 IsChlorineValid = true;
@@ -640,6 +760,21 @@ namespace AquaMap.ViewModels
             {
                 IsBusy = false;
             }
+        }
+
+        private static string SanitizeCoordinate(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            bool hasNegative = false, hasDecimal = false;
+            int decimalDigits = 0;
+            var result = new System.Text.StringBuilder();
+            foreach (char c in input)
+            {
+                if (c == '-' && !hasNegative && result.Length == 0) { hasNegative = true; result.Append(c); }
+                else if ((c == '.' || c == ',') && !hasDecimal) { hasDecimal = true; result.Append('.'); }
+                else if (char.IsDigit(c)) { if (hasDecimal) { if (decimalDigits < 6) { result.Append(c); decimalDigits++; } } else result.Append(c); }
+            }
+            return result.ToString();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
