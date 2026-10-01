@@ -183,14 +183,22 @@ namespace AquaMap.Public.Views
 
         private async void OnWebViewNavigating(object? sender, WebNavigatingEventArgs e)
         {
-            if (e.Url.StartsWith("aquamap://details/"))
+            try
             {
-                e.Cancel = true;
-                var idStr = e.Url.Replace("aquamap://details/", "");
-                if (int.TryParse(idStr, out int id))
+                if (e.Url.StartsWith("aquamap://details/"))
                 {
-                    await Shell.Current.GoToAsync($"ReservoirDetailPage?Id={id}");
+                    e.Cancel = true;
+                    var idStr = e.Url.Replace("aquamap://details/", "");
+                    if (int.TryParse(idStr, out int id))
+                    {
+                        await Shell.Current.GoToAsync($"ReservoirDetailPage?Id={id}");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
+                await DisplayAlert("Erro", "Não foi possível abrir os detalhes do reservatório.", "OK");
             }
         }
 

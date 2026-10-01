@@ -101,9 +101,17 @@ namespace AquaMap.Views
 
         private async void OnInfoWindowClicked(object? sender, EventArgs e)
         {
-            if (sender is AquaMap.Controls.CustomPin pin)
+            try
             {
-                await Shell.Current.GoToAsync($"ReservoirDetailPage?ReservoirId={pin.ReservoirId}&ReservoirName={Uri.EscapeDataString(pin.Label)}");
+                if (sender is AquaMap.Controls.CustomPin pin)
+                {
+                    await Shell.Current.GoToAsync($"ReservoirDetailPage?ReservoirId={pin.ReservoirId}&ReservoirName={Uri.EscapeDataString(pin.Label)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
+                await DisplayAlert("Erro", "Não foi possível abrir os detalhes do reservatório.", "OK");
             }
         }
 #endif
