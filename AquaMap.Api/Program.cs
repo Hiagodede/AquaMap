@@ -77,6 +77,14 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Exceção não tratada: o ExceptionHandlerMiddleware registra o erro no log e
+// o cliente recebe só um 500 genérico em JSON, sem stack trace.
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsJsonAsync(new { error = "Erro interno no servidor." });
+}));
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
