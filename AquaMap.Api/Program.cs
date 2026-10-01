@@ -178,6 +178,11 @@ app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =
         _ => DateTime.SpecifyKind(analysis.AnalysisDate, DateTimeKind.Utc)
     };
 
+    // Campos definidos pelo servidor: ignora o que vier do cliente (evita over-posting / inserir reservatório pelo grafo).
+    analysis.Id = 0;
+    analysis.IsPendingSync = false;
+    analysis.Reservoir = null!;
+
     var validationError = ValidateWaterAnalysis(analysis);
     if (validationError != null) return Results.BadRequest(new { error = validationError });
 
@@ -303,6 +308,8 @@ static string? ValidateWaterAnalysis(WaterAnalysis a)
     if (a.ResidualChlorine < 0 || a.ResidualChlorine > 20) return "Cloro residual deve estar entre 0 e 20 mg/L.";
     if (a.Turbidity < 0 || a.Turbidity > 1000) return "Turbidez deve estar entre 0 e 1000 NTU.";
     if (a.Iron < 0 || a.Iron > 100) return "Ferro deve estar entre 0 e 100 mg/L.";
+    if (a.CollectionLatitude is double lat && (lat < -90 || lat > 90)) return "Latitude da coleta deve estar entre -90 e 90.";
+    if (a.CollectionLongitude is double lon && (lon < -180 || lon > 180)) return "Longitude da coleta deve estar entre -180 e 180.";
     return null;
 }
 
