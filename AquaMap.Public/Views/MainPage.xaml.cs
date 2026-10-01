@@ -200,7 +200,7 @@ namespace AquaMap.Public.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
-                await DisplayAlert("Erro", "Não foi possível abrir os detalhes do reservatório.", "OK");
+                await SafeAlertAsync("Erro", "Não foi possível abrir os detalhes do reservatório.");
             }
         }
 
@@ -209,6 +209,19 @@ namespace AquaMap.Public.Views
             if (r.WaterAnalyses == null || !r.WaterAnalyses.Any()) return "nodata";
             var last = r.WaterAnalyses.OrderByDescending(x => x.AnalysisDate).First();
             return last.IsPotable ? "ok" : "alert";
+        }
+
+        // Alerta que nunca lança (usado dentro de catch de handlers async void).
+        private async Task SafeAlertAsync(string title, string message)
+        {
+            try
+            {
+                await DisplayAlert(title, message, "OK");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {ex}");
+            }
         }
     }
 }

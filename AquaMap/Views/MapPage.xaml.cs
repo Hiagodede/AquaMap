@@ -57,7 +57,7 @@ namespace AquaMap.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao carregar o mapa: {ex}");
-                await DisplayAlert("Erro", "Não foi possível carregar o mapa. Tente novamente.", "OK");
+                await SafeAlertAsync("Erro", "Não foi possível carregar o mapa. Tente novamente.");
             }
         }
 
@@ -111,9 +111,22 @@ namespace AquaMap.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
-                await DisplayAlert("Erro", "Não foi possível abrir os detalhes do reservatório.", "OK");
+                await SafeAlertAsync("Erro", "Não foi possível abrir os detalhes do reservatório.");
             }
         }
 #endif
+
+        // Alerta que nunca lança (usado dentro de catch de handlers async void).
+        private async Task SafeAlertAsync(string title, string message)
+        {
+            try
+            {
+                await DisplayAlert(title, message, "OK");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {ex}");
+            }
+        }
     }
 }
