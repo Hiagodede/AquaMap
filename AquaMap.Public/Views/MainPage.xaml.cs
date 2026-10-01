@@ -42,7 +42,9 @@ namespace AquaMap.Public.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao carregar o mapa: {ex}");
-                await DisplayAlert("Erro", "Não foi possível carregar o mapa. Tente novamente.", "OK");
+                _mapRendered = false;
+                // Mostra o painel de erro com "Tentar novamente" (mesmo estado da falha de rede)
+                _viewModel.ErrorMessage = "Não foi possível carregar o mapa. Tente novamente.";
             }
         }
 
