@@ -164,7 +164,7 @@ public class ApiService
         }
     }
 
-    public async Task<bool> DeleteReservoirAsync(int id, string token)
+    public async Task<ApiResult> DeleteReservoirAsync(int id, string token)
     {
         try
         {
@@ -172,12 +172,12 @@ public class ApiService
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            return response.IsSuccessStatusCode;
+            return await ToResultAsync(response).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erro ao excluir reservatório: {ex.Message}");
-            return false;
+            return new ApiResult(false, null, null);
         }
     }
 
@@ -233,7 +233,38 @@ public class ApiService
             return false;
         }
     }
+
+    /// <summary>Converte a resposta em ApiResult, lendo a mensagem da API ({"error": "..."} ou string JSON) quando houver.</summary>
+    private static async Task<ApiResult> ToResultAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return new ApiResult(true, (int)response.StatusCode, null);
+
+        string? message = null;
+        try
+        {
+            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.String)
+                    message = root.GetString();
+                else if (root.ValueKind == JsonValueKind.Object
+                         && root.TryGetProperty("error", out var error)
+                         && error.ValueKind == JsonValueKind.String)
+                    message = error.GetString();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Resposta de erro sem mensagem legível: {ex.Message}");
+        }
+        return new ApiResult(false, (int)response.StatusCode, message);
+    }
 }
+
+/// <summary>Resultado de uma chamada que altera dados. StatusCode null = falha de rede/timeout.</summary>
+public record ApiResult(bool Success, int? StatusCode, string? ErrorMessage);
 
 public class LoginResponse
 {

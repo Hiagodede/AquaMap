@@ -164,6 +164,10 @@ app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
 {
     var reservoir = await db.Reservoirs.FindAsync(id);
     if (reservoir is null) return Results.NotFound();
+    // A FK das análises é em cascata: apagar o reservatório apagaria o histórico de qualidade da água.
+    var hasAnalyses = await db.WaterAnalyses.AnyAsync(w => w.ReservoirId == id);
+    if (hasAnalyses)
+        return Results.Conflict(new { error = "Não é possível excluir: o reservatório possui análises registradas." });
     db.Reservoirs.Remove(reservoir);
     await db.SaveChangesAsync();
     return Results.NoContent();
