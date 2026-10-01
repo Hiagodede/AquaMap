@@ -18,9 +18,8 @@ namespace AquaMap.Views
             base.OnAppearing();
             try
             {
-                // Carrega os Pinos da API
-                _viewModel.LoadMapCommand?.Execute(null);
-                await Task.Delay(1000); // Aguarda carregamento rápido
+                // Carrega os Pinos da API (aguarda a resposta real; cold start do Render pode levar ~30 s)
+                await _viewModel.LoadMapDataAsync();
 
                 // Monta o mapa via WebView (OpenStreetMap) usando a primeira coordenada encontrada
                 if (_viewModel.MapPins.Count > 0)
