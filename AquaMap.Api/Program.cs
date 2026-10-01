@@ -266,12 +266,8 @@ app.MapGet("/metrics", async (AppDbContext db) =>
         .Select(g => g.OrderByDescending(w => w.AnalysisDate).First())
         .ToListAsync();
 
-    var outOfStandard = latestPerReservoir.Count(w =>
-        !(w.ResidualChlorine >= 0.2 && w.ResidualChlorine <= 5.0 &&
-          w.Ph >= 6.0 && w.Ph <= 9.5 &&
-          w.Turbidity <= 5.0 &&
-          w.Iron <= 0.3 &&
-          w.EColiAbsent));
+    // Regra de potabilidade única: WaterAnalysis.IsPotable (domínio). Avaliada em memória, após o ToListAsync.
+    var outOfStandard = latestPerReservoir.Count(w => !w.IsPotable);
 
     var noData = totalReservoirs - latestPerReservoir.Count;
 
