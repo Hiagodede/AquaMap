@@ -18,10 +18,19 @@ namespace AquaMap.Views
             base.OnAppearing();
             
             // Verifica se já tem token salvo. Se sim, pula direto pro formulário.
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
-            if (!string.IsNullOrEmpty(token))
+            try
             {
-                await Shell.Current.GoToAsync("CollectionFormPage");
+                var token = await SecureStorage.Default.GetAsync("jwt_token");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    await Shell.Current.GoToAsync("CollectionFormPage");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Keystore corrompido (ex.: restauração de backup) — descarta o token e segue no login.
+                System.Diagnostics.Debug.WriteLine($"Erro ao ler token salvo: {ex}");
+                try { SecureStorage.Default.Remove("jwt_token"); } catch { }
             }
         }
     }

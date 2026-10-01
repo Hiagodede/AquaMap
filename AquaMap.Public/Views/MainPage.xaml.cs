@@ -22,9 +22,17 @@ namespace AquaMap.Public.Views
             base.OnAppearing();
             if (_mapRendered) return; // Evitar re-render ao voltar da tela de detalhes
             
-            await _viewModel.LoadDataAsync();
-            RenderMap();
-            _mapRendered = true;
+            try
+            {
+                await _viewModel.LoadDataAsync();
+                RenderMap();
+                _mapRendered = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar o mapa: {ex}");
+                await DisplayAlert("Erro", "Não foi possível carregar o mapa. Tente novamente.", "OK");
+            }
         }
 
         private void RenderMap()
