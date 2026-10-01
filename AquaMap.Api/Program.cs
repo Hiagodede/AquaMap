@@ -170,6 +170,14 @@ app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
 
 app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =>
 {
+    // Npgsql só aceita UTC em timestamptz; o app envia a data UTC sem o "Z" (Kind=Unspecified).
+    analysis.AnalysisDate = analysis.AnalysisDate.Kind switch
+    {
+        DateTimeKind.Utc => analysis.AnalysisDate,
+        DateTimeKind.Local => analysis.AnalysisDate.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(analysis.AnalysisDate, DateTimeKind.Utc)
+    };
+
     var validationError = ValidateWaterAnalysis(analysis);
     if (validationError != null) return Results.BadRequest(new { error = validationError });
 
