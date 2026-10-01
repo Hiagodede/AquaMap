@@ -200,8 +200,12 @@ app.MapGet("/water-analysis/{reservoirId}", async (AppDbContext db, int reservoi
 })
 .WithName("GetWaterAnalysisByReservoir");
 
-app.MapPost("/users", async (AppDbContext db, CreateUserRequest request) =>
+app.MapPost("/users", async (AppDbContext db, CreateUserRequest request, System.Security.Claims.ClaimsPrincipal currentUser) =>
 {
+    // Só um Administrador pode criar outro Administrador (o token leva ClaimTypes.Role, ver TokenService).
+    if (request.Role == UserType.Administrator && !currentUser.IsInRole(nameof(UserType.Administrator)))
+        return Results.Forbid();
+
     var exists = await db.Users.AnyAsync(u => u.TaxId == request.TaxId);
     if (exists) return Results.Conflict("Usuário já cadastrado com esse CPF.");
 
