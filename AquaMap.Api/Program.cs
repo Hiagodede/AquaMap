@@ -211,11 +211,22 @@ app.MapPost("/users", async (AppDbContext db, CreateUserRequest request, System.
     if (request.Role == UserType.Administrator && !currentUser.IsInRole(nameof(UserType.Administrator)))
         return Results.Forbid();
 
+    var userValidationError = ValidateCreateUser(request);
+    if (userValidationError != null) return Results.BadRequest(new { error = userValidationError });
+
+    // Npgsql só aceita UTC em timestamptz (mesma causa do B-01).
+    var birthDate = request.BirthDate.Kind switch
+    {
+        DateTimeKind.Utc => request.BirthDate,
+        DateTimeKind.Local => request.BirthDate.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(request.BirthDate, DateTimeKind.Utc)
+    };
+
     var exists = await db.Users.AnyAsync(u => u.TaxId == request.TaxId);
     if (exists) return Results.Conflict("Usuário já cadastrado com esse CPF.");
 
     var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-    var user = new User(request.FullName, request.TaxId, request.BirthDate, request.Address, request.PhoneNumber, request.Email, hash, request.Role);
+    var user = new User(request.FullName, request.TaxId, birthDate, request.Address, request.PhoneNumber, request.Email, hash, request.Role);
     db.Users.Add(user);
     await db.SaveChangesAsync();
     return Results.Created($"/users/{user.Id}", new { user.Id, user.FullName, user.TaxId, user.Role });
@@ -310,6 +321,22 @@ static string? ValidateWaterAnalysis(WaterAnalysis a)
     if (a.Iron < 0 || a.Iron > 100) return "Ferro deve estar entre 0 e 100 mg/L.";
     if (a.CollectionLatitude is double lat && (lat < -90 || lat > 90)) return "Latitude da coleta deve estar entre -90 e 90.";
     if (a.CollectionLongitude is double lon && (lon < -180 || lon > 180)) return "Longitude da coleta deve estar entre -180 e 180.";
+    return null;
+}
+
+// Validação de entrada do POST /users (mesmas regras mínimas do app: CPF com 11 dígitos, senha >= 6).
+static string? ValidateCreateUser(CreateUserRequest r)
+{
+    if (string.IsNullOrWhiteSpace(r.FullName)) return "Nome é obrigatório.";
+    if (r.FullName.Length > 150) return "Nome deve ter no máximo 150 caracteres.";
+    if (string.IsNullOrWhiteSpace(r.TaxId)) return "CPF é obrigatório.";
+    if (r.TaxId.Length > 20 || r.TaxId.Count(char.IsDigit) != 11) return "CPF deve conter 11 dígitos.";
+    if (string.IsNullOrWhiteSpace(r.Password) || r.Password.Length < 6) return "Senha deve conter pelo menos 6 caracteres.";
+    if (r.Password.Length > 72) return "Senha deve ter no máximo 72 caracteres.";
+    if (r.Address is null || r.Address.Length > 300) return "Endereço é obrigatório e deve ter no máximo 300 caracteres.";
+    if (r.PhoneNumber is null || r.PhoneNumber.Length > 30) return "Telefone é obrigatório e deve ter no máximo 30 caracteres.";
+    if (r.Email is null || r.Email.Length > 254) return "E-mail é obrigatório e deve ter no máximo 254 caracteres.";
+    if (!Enum.IsDefined(r.Role)) return "Papel (Role) inválido.";
     return null;
 }
 
