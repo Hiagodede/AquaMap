@@ -113,7 +113,15 @@ namespace AquaMap.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Shell.Current.DisplayAlert("Erro", $"Falha ao exportar PDF: {ex.Message}", "OK");
+                    System.Diagnostics.Debug.WriteLine($"Erro ao exportar PDF: {ex}");
+                    try
+                    {
+                        await Shell.Current.DisplayAlert("Erro", "Não foi possível exportar o PDF neste aparelho.", "OK");
+                    }
+                    catch (Exception alertEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {alertEx.Message}");
+                    }
                 }
                 finally
                 {
