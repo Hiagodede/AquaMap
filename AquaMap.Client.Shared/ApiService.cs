@@ -201,7 +201,7 @@ public class ApiService
         }
     }
 
-    public async Task<bool> CreateUserAsync(object userData, string token)
+    public async Task<ApiResult> CreateUserAsync(object userData, string token)
     {
         try
         {
@@ -209,12 +209,12 @@ public class ApiService
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Content = JsonContent.Create(userData);
             var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            return response.IsSuccessStatusCode;
+            return await ToResultAsync(response).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erro ao criar usuário: {ex.Message}");
-            return false;
+            return new ApiResult(false, null, null);
         }
     }
 

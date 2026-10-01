@@ -401,9 +401,9 @@ namespace AquaMap.ViewModels
                     Role = IsAdmin ? 1 : 0
                 };
 
-                var success = await _apiService.CreateUserAsync(userData, token);
+                var result = await _apiService.CreateUserAsync(userData, token);
 
-                if (success)
+                if (result.Success)
                 {
                     IsSuccess = true;
                     StatusMessage = "Técnico cadastrado com sucesso!";
@@ -414,7 +414,14 @@ namespace AquaMap.ViewModels
                 else
                 {
                     IsSuccess = false;
-                    StatusMessage = "Erro ao cadastrar. CPF pode já estar em uso.";
+                    StatusMessage = result.StatusCode switch
+                    {
+                        403 => "Somente administradores podem criar outro administrador.",
+                        400 when !string.IsNullOrWhiteSpace(result.ErrorMessage) => result.ErrorMessage!,
+                        409 => "Erro ao cadastrar. CPF já está em uso.",
+                        null => "Erro de conexão. Verifique a internet e tente novamente.",
+                        _ => "Erro ao cadastrar. CPF pode já estar em uso."
+                    };
                 }
             }
             catch (Exception ex)
