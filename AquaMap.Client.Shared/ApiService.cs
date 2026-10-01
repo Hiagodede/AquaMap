@@ -218,19 +218,19 @@ public class ApiService
         }
     }
 
-    public async Task<bool> DeleteUserAsync(Guid id, string token)
+    public async Task<ApiResult> DeleteUserAsync(Guid id, string token)
     {
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Delete, $"/users/{id}");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            return response.IsSuccessStatusCode;
+            return await ToResultAsync(response).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erro ao excluir usuário: {ex.Message}");
-            return false;
+            return new ApiResult(false, null, null);
         }
     }
 

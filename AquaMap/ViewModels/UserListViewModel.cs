@@ -98,13 +98,24 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             try
             {
-                var success = await _apiService.DeleteUserAsync(user.Id, token);
-                if (success)
+                var result = await _apiService.DeleteUserAsync(user.Id, token);
+                if (result.Success)
                 {
                     Users.Remove(user);
                     HasData = Users.Count > 0;
                     IsEmpty = !HasData;
                 }
+                else
+                {
+                    var message = result.StatusCode == 409 && !string.IsNullOrWhiteSpace(result.ErrorMessage)
+                        ? result.ErrorMessage
+                        : "Não foi possível excluir o usuário. Verifique sua conexão e tente novamente.";
+                    await Shell.Current.DisplayAlert("Erro", message, "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao excluir usuário: {ex}");
             }
             finally
             {

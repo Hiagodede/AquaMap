@@ -250,10 +250,23 @@ app.MapGet("/users", async (AppDbContext db) =>
 .WithName("GetUsers")
 .RequireAuthorization();
 
-app.MapDelete("/users/{id}", async (AppDbContext db, Guid id) =>
+app.MapDelete("/users/{id}", async (AppDbContext db, Guid id, System.Security.Claims.ClaimsPrincipal currentUser) =>
 {
     var user = await db.Users.FindAsync(id);
     if (user is null) return Results.NotFound();
+
+    // O TokenService grava o Id do usuário em ClaimTypes.NameIdentifier.
+    var currentUserId = currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (Guid.TryParse(currentUserId, out var currentId) && currentId == id)
+        return Results.Conflict(new { error = "Você não pode excluir o próprio usuário." });
+
+    if (user.Role == UserType.Administrator)
+    {
+        var adminCount = await db.Users.CountAsync(u => u.Role == UserType.Administrator);
+        if (adminCount <= 1)
+            return Results.Conflict(new { error = "Não é possível excluir o último administrador." });
+    }
+
     db.Users.Remove(user);
     await db.SaveChangesAsync();
     return Results.NoContent();
