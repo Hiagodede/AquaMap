@@ -22,11 +22,22 @@ namespace AquaMap.Public.Views
             base.OnAppearing();
             if (_mapRendered) return; // Evitar re-render ao voltar da tela de detalhes
             
+            await LoadAndRenderAsync();
+        }
+
+        private async void OnRetryClicked(object? sender, EventArgs e)
+        {
+            await LoadAndRenderAsync();
+        }
+
+        private async Task LoadAndRenderAsync()
+        {
             try
             {
                 await _viewModel.LoadDataAsync();
                 RenderMap();
-                _mapRendered = true;
+                // Só considera renderizado se vieram dados; senão tenta de novo ao voltar à tela
+                _mapRendered = _viewModel.Reservoirs.Count > 0;
             }
             catch (Exception ex)
             {

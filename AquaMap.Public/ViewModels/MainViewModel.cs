@@ -20,6 +20,14 @@ namespace AquaMap.Public.ViewModels
             set { _isBusy = value; OnPropertyChanged(); }
         }
 
+        private string _errorMessage = string.Empty;
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set { _errorMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasError)); }
+        }
+        public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
         public ICommand LoadDataCommand { get; }
         public ICommand PinClickedCommand { get; }
 
@@ -34,14 +42,24 @@ namespace AquaMap.Public.ViewModels
         {
             if (IsBusy) return;
             IsBusy = true;
+            ErrorMessage = string.Empty;
             try
             {
+                // ApiService devolve lista vazia em caso de falha (rede, timeout, erro HTTP)
                 var data = await _apiService.GetReservoirsAsync();
                 Reservoirs.Clear();
                 foreach (var r in data)
                 {
                     Reservoirs.Add(r);
                 }
+
+                if (Reservoirs.Count == 0)
+                    ErrorMessage = "Não foi possível carregar os reservatórios. Verifique sua conexão com a internet e tente novamente.";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar reservatórios: {ex}");
+                ErrorMessage = "Não foi possível carregar os reservatórios. Verifique sua conexão com a internet e tente novamente.";
             }
             finally
             {

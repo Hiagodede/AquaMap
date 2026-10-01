@@ -63,6 +63,34 @@
         </Border>
 
         <!-- Loading -->
-        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" HorizontalOptions="Center" VerticalOptions="Center" />
+        <Border IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Margin="32,0"
+                StrokeShape="RoundRectangle 12"
+                Stroke="Transparent"
+                Padding="20,16"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
+            <VerticalStackLayout Spacing="10">
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" HorizontalOptions="Center" />
+                <Label Text="Conectando ao servidor (pode levar até 1 minuto)..." FontSize="13" HorizontalTextAlignment="Center" TextColor="{StaticResource TextSecondary}" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Erro / sem internet -->
+        <Border IsVisible="{Binding HasError}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Margin="32,0"
+                StrokeShape="RoundRectangle 12"
+                Stroke="#EF4444"
+                StrokeThickness="1"
+                Padding="20,16"
+                BackgroundColor="{AppThemeBinding Light=#FEF2F2, Dark=#1E293B}">
+            <VerticalStackLayout Spacing="12">
+                <Label Text="{Binding ErrorMessage}" FontSize="13" HorizontalTextAlignment="Center" TextColor="#EF4444" />
+                <Button Text="Tentar novamente" Clicked="OnRetryClicked" BackgroundColor="#155E75" TextColor="White" CornerRadius="8" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Border>
     </Grid>
 </ContentPage>
