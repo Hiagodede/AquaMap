@@ -84,6 +84,9 @@ app.UseAuthorization();
 
 // Endpoints
 
+// Health check / aquecimento (cold start do Render): anônimo e sem acesso ao banco
+app.MapGet("/health", () => Results.Ok("ok")).AllowAnonymous();
+
 app.MapPost("/login", async (AppDbContext db, TokenService tokenService, LoginRequest request) =>
 {
     var user = await db.Users.FirstOrDefaultAsync(u => u.TaxId == request.TaxId);
