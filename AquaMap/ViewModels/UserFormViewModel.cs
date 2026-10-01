@@ -416,6 +416,7 @@ namespace AquaMap.ViewModels
                     IsSuccess = false;
                     StatusMessage = result.StatusCode switch
                     {
+                        401 => "Sessão expirada. Faça login novamente.",
                         403 => "Somente administradores podem criar outro administrador.",
                         400 when !string.IsNullOrWhiteSpace(result.ErrorMessage) => result.ErrorMessage!,
                         409 => "Erro ao cadastrar. CPF já está em uso.",
