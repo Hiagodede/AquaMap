@@ -1,6 +1,6 @@
 # Manual técnico para o time TI Cinética
 
-Este manual explica, passo a passo, como pegar o código do AquaMap, abrir no Visual Studio, rodar os dois apps (Técnico e Cidadão) num computador Windows ou num emulador Android, e como gerar um instalável (.apk) para testar num celular Android real.
+Este manual explica, passo a passo, como pegar o código do AquaMap, abrir no Visual Studio, rodar os dois apps (Técnico e Cidadão) num emulador Android, e como gerar um instalável (.apk) para testar num celular Android real.
 
 Não é preciso instalar nem configurar nenhum servidor/banco de dados para esses testes — os dois apps já vêm configurados para conversar com a API que está rodando online (gratuita, no Render.com), do mesmo jeito que vai funcionar quando o app estiver em uso real. Detalhes de arquitetura estão em `ARCHITECTURE.md`; o estado atual do projeto, incluindo bugs conhecidos, está em `HANDOFF.md` — vale ler antes de testar, para saber o que já é esperado dar errado.
 
@@ -39,7 +39,7 @@ Não precisa configurar IP, banco de dados nem variável de ambiente nenhuma par
 https://aquamap-g0at.onrender.com
 ```
 
-Ou seja: assim que o app abrir (no Windows, no emulador ou no celular), ele já vai carregar reservatórios e dados reais dessa API online, sem passo extra de configuração.
+Ou seja: assim que o app abrir (no emulador ou no celular), ele já vai carregar reservatórios e dados reais dessa API online, sem passo extra de configuração.
 
 **Login do app Técnico** (usuário administrador criado automaticamente):
 - CPF: `000.000.000-00`
@@ -47,14 +47,9 @@ Ou seja: assim que o app abrir (no Windows, no emulador ou no celular), ele já 
 
 > ⚠️ **Atenção**: como o app aponta direto para a API de produção, qualquer coleta ou reservatório que vocês cadastrarem durante os testes vai gravar no banco de dados real. Evitem cadastrar dados de teste com nomes aleatórios sem necessidade, e combinem com o responsável do projeto antes de fazer uma limpeza no banco, se precisar.
 
-## 4. Rodar o app no Windows (mais rápido para testar telas e fluxos)
+## 4. Windows não é mais suportado
 
-1. No **Gerenciador de Soluções** (painel à direita do Visual Studio), clique com o botão direito no projeto que quer testar — **`AquaMap`** (Técnico) ou **`AquaMap.Public`** (Cidadão) — e escolha **"Definir como Projeto de Inicialização"** ("Set as Startup Project").
-2. Na barra de ferramentas superior, ao lado do botão verde de "play", tem um menu suspenso com o alvo de execução. Selecione **"Windows Machine"** (framework `net9.0-windows...`).
-3. Clique no botão verde ▶ (ou aperte **F5**).
-4. O app abre como uma janela normal do Windows, já conectado à API online.
-
-Repita o processo trocando o projeto de inicialização para testar o outro app.
+Desde a v2, os dois apps são **só Android**: o alvo "Windows Machine" (`net9.0-windows...`) foi removido. Use o emulador Android (§5) ou um celular físico.
 
 ## 5. Rodar no emulador Android
 
@@ -102,7 +97,6 @@ Use esse caminho se quiser distribuir o app para alguém testar sem precisar con
 
 ## 8. Problemas comuns
 
-- **App Cidadão fecha sozinho ao abrir o `.exe` direto pela pasta `bin/`, fora do Visual Studio**: isso é uma falha conhecida de empacotamento ao rodar o executável bruto no Windows (detalhada em `HANDOFF.md`). Sempre testem rodando via **F5 no Visual Studio** (§4), não clicando duas vezes no `.exe`.
 - **Tela de login não entra / dados não carregam**: confirme que o dispositivo tem internet — a API é online, não há modo totalmente offline no app Cidadão, e o app Técnico só funciona offline para dados já carregados anteriormente.
 - **"Sessão expirada" no app Técnico**: o token de login dura 8 horas; basta fazer login de novo.
 - **Emulador Android muito lento para abrir**: normal na primeira execução; se persistir, verifique se a virtualização (Hyper-V/HAXM) está habilitada no BIOS do computador — o próprio instalador do Visual Studio avisa se faltar algum pré-requisito.

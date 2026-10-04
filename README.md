@@ -5,7 +5,7 @@ Sistema cliente-servidor para monitoramento da qualidade da água do SAAE Alegre
 > Documentação completa: este README cobre visão geral e como rodar o projeto.
 > Para arquitetura técnica detalhada (fluxo de dados, autenticação, sincronização offline), veja **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 > Para o estado atual real do projeto — o que funciona, bugs conhecidos, dívidas técnicas e prioridades para quem assumir — veja **[HANDOFF.md](HANDOFF.md)**. Leia esse documento antes de começar a mexer no código.
-> Para testar os apps no Visual Studio (Windows, emulador Android ou celular físico, com geração de .apk) — veja **[MANUAL_TECNICO_TI_CINETICA.md](MANUAL_TECNICO_TI_CINETICA.md)**.
+> Para testar os apps no Visual Studio (emulador Android ou celular físico, com geração de .apk) — veja **[MANUAL_TECNICO_TI_CINETICA.md](MANUAL_TECNICO_TI_CINETICA.md)**.
 
 ## 1. Visão Geral
 
@@ -49,7 +49,7 @@ Mais rápido para testar a UI — os dois apps já vêm configurados (inclusive 
 
 1. Abra `AquaMap.sln` no Visual Studio 2022 (17.12+), com a workload **".NET Multi-platform App UI development"** instalada.
 2. Defina `AquaMap` (técnico) ou `AquaMap.Public` (cidadão) como projeto de inicialização.
-3. Escolha o destino **Windows Machine** (mais rápido) ou um emulador Android.
+3. Escolha um emulador Android ou um celular físico (os apps são só Android desde a v2).
 4. F5.
 
 Login de técnico padrão (seed automático, ver §4.2): CPF `000.000.000-00`, senha `admin123`.

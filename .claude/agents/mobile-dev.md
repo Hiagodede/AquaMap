@@ -16,4 +16,4 @@ Princípios:
 - Configuração por ambiente. Debug/Beta nunca aponta para produção.
 - As coordenadas de Alegre/ES são negativas: teclados e parsers devem aceitar sinal e usar `CultureInfo.InvariantCulture`.
 
-Antes de concluir: build do app afetado (`-f net9.0-android` e/ou `-f net9.0-windows10.0.19041.0`) sem avisos novos e testes verdes. Se possível, execute no Windows ou no emulador e descreva o que viu. Se não puder executar, **diga explicitamente** que a mudança visual não foi verificada.
+Antes de concluir: build do app afetado (`-f net9.0-android`; os apps são só Android) sem avisos novos e testes verdes. Se possível, execute no emulador Android ou no celular e descreva o que viu. Se não puder executar, **diga explicitamente** que a mudança visual não foi verificada.

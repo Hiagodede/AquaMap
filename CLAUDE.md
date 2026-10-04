@@ -11,9 +11,9 @@ Leia antes de qualquer tarefa:
 
 | Projeto | O que é | Framework |
 |---|---|---|
-| `AquaMap/` | App do **técnico** (MAUI): login JWT, CRUD de reservatórios, coleta, PDF, offline-first com SQLite | net9.0-android/ios/maccatalyst/windows |
-| `AquaMap.Public/` | App do **cidadão** (MAUI): só leitura, sem login, sempre online | net9.0-* |
-| `AquaMap.Client.Shared/` | `ApiService` HTTP compartilhado pelos dois apps | net9.0 |
+| `AquaMap/` | App do **técnico** (MAUI): login JWT, CRUD de reservatórios, coleta, PDF, offline-first com SQLite | net9.0-android |
+| `AquaMap.Public/` | App do **cidadão** (MAUI): só leitura, sem login, sempre online | net9.0-android |
+| `AquaMap.Client.Shared/` | `ApiService` HTTP compartilhado pelos dois apps | net9.0-android |
 | `AquaMap.Api/` | Minimal APIs, tudo em `Program.cs`, JWT, EF Core + Npgsql | net10.0 |
 | `AquaMap.Domain/` | Entidades e regras puras (`WaterAnalysis.IsPotable` etc.) | net9.0 |
 | `AquaMap.Infrastructure/` | `AppDbContext` e migrations (PostgreSQL) | net9.0 |
@@ -53,7 +53,7 @@ Uma tarefa só está pronta quando:
 1. `dotnet build AquaMap.sln` passa sem erros e **sem novos avisos**.
 2. Os testes passam (`dotnet test`), e **todo bug corrigido tem um teste que falhava antes da correção**.
 3. A mudança foi revisada por um agente que não a escreveu (`code-reviewer`; para auth, dados pessoais ou entrada de usuário, também `security-reviewer`).
-4. O comportamento foi verificado de verdade: API via teste de integração ou chamada HTTP local, app executado no Windows/emulador quando a mudança é visual.
+4. O comportamento foi verificado de verdade: API via teste de integração ou chamada HTTP local, app executado no emulador Android ou celular quando a mudança é visual.
 5. O item no `docs/PLANO_V2.md` foi marcado e o que ficou de fora foi anotado.
 6. Nunca declare "pronto" sem ter rodado os passos acima. Se algo não pôde ser verificado (ex.: sem emulador), **diga isso explicitamente**.
 
@@ -61,7 +61,8 @@ Uma tarefa só está pronta quando:
 
 ```bash
 dotnet build AquaMap.Api/AquaMap.Api.csproj
-dotnet build AquaMap/AquaMap.csproj -f net9.0-windows10.0.19041.0
+dotnet build AquaMap.sln                      # solution inteira (apps só Android)
+dotnet build AquaMap/AquaMap.csproj -f net9.0-android
 dotnet build AquaMap.Public/AquaMap.Public.csproj -f net9.0-android
 dotnet test                                   # após a Fase 1 criar os projetos de teste
 docker compose up -d db                       # Postgres local (copie .env.example para .env)

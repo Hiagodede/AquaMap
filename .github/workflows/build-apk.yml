@@ -18,7 +18,7 @@ jobs:
           distribution: microsoft
           java-version: '17'
       - name: Instalar workload MAUI
-        run: dotnet workload install maui
+        run: dotnet workload install maui-android
       - name: APK do app Tecnico
         run: dotnet publish AquaMap/AquaMap.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -o out/tecnico
       - name: APK do app Cidadao

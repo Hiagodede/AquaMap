@@ -28,7 +28,8 @@ O app funciona, mas não tem as bases de um produto:
 
 Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS das coletas presas nos celulares:
 - [x] Integrar `origin/hiago` + `fix/coleta-ferro-gps-cloro` na `v2`
-- [ ] Compilar a solution inteira na `v2` e rodar os dois apps (Windows + emulador Android)
+- [x] Compilar a solution inteira na `v2` (PR `chore/build-android`: apps passam a ser só Android)
+- [ ] Rodar os dois apps no emulador Android ou no celular (sem emulador instalado ainda; cuidado: Debug aponta para produção)
 - [ ] Testar no celular: o app Cidadão abre (M-01) e uma coleta offline sincroniza com Ferro e GPS
 - [ ] Decidir se essas correções também vão para a produção atual antes da v2 (hotfix). Se sim: APK novo do Técnico instalado **antes** do redeploy da API
 
@@ -36,7 +37,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 
 **Ambientes**
 - [ ] Criar a API de **staging** no Render (serviço + Postgres separados, segredos próprios)
-- [ ] Apps em Debug/Beta apontam para staging. `ApplicationId` beta (`...aquamap.beta`, `...aquamap.cidadao.beta`) com outro nome e ícone, para conviver com a versão de produção no mesmo celular
+- [ ] Apps em Debug/Beta apontam para staging. `ApplicationId` beta (`...aquamap.beta`, `...aquamap.cidadao.beta`) com outro nome e ícone, para conviver com a versão de produção no mesmo celular. Remover junto o `BaseUrlWindows` (código morto em `ApiClientFactory.cs` e nos `appsettings.Development.json`)
 - [ ] Seed de dados de teste **apenas** em Development/Staging (remover ou corrigir o `SeedDataService` morto)
 
 **Testes**
@@ -45,7 +46,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Testes do `SyncService` / `LocalWaterAnalysis` (mapeamento de todos os campos na sincronização)
 
 **CI e regras do repositório**
-- [ ] `ci.yml` no GitHub Actions: build da API + Domain + Infra, testes e build Android dos dois apps em todo PR para `v2`/`master`
+- [ ] `ci.yml` no GitHub Actions: build da API + Domain + Infra, testes e build Android dos dois apps em todo PR para `v2`/`master`. O `build-apk.yml` atual só dispara em `master`/`hiago` e usa SDK 9
 - [ ] Proteger as branches `master` e `v2`: exigir CI verde + 1 aprovação, sem force-push
 - [ ] `.editorconfig`, `Nullable` habilitado, `TreatWarningsAsErrors` nos projetos novos/limpos, analisadores do .NET
 - [ ] Dependabot (NuGet + GitHub Actions)
@@ -58,6 +59,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Rate limiting no `/login` + bloqueio progressivo
 - [ ] Remover o seed `admin123` de produção. Primeiro admin criado por comando/variável de ambiente única
 - [ ] `RequireHttpsMetadata = true` fora de Development. Chave JWT em UTF-8 com tamanho mínimo validado
+- [ ] Chave do Google Maps fixa no `AndroidManifest.xml` do Técnico (viola a regra 5): restringir por pacote/SHA-1 no Google Cloud e injetar por propriedade de build. Rever `usesCleartextTraffic="true"`
 - [ ] Refresh token (hoje o login expira em 8h sem renovação)
 - [ ] `GET /users`: só para admin e sem CPF completo (mascarar)
 - [ ] Política de privacidade + respostas do formulário de Data Safety da Google Play
@@ -70,7 +72,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Validação com FluentValidation + `ProblemDetails` padronizado
 - [ ] Usar no cliente `GET /metrics` e `/water-analysis/collection-points`, ou remover esses endpoints
 - [ ] Migrar os apps MAUI e as libs para **.NET 10 LTS**. Alinhar as versões de pacotes (Npgsql, EF). Remover `EntityFrameworkCore.Sqlite` da Infrastructure
-- [ ] Decidir o motor de mapa único para os dois apps e todas as plataformas (hoje: nativo só no Android do Técnico, WebView+Leaflet no resto)
+- [ ] Decidir o motor de mapa único para os dois apps (hoje: nativo no Técnico, WebView+Leaflet no Cidadão). No Técnico, o caminho WebView de `MapPage.xaml.cs` ainda carrega o OSM a cada `OnAppearing` antes de ser escondido
 
 ## Fase 4 — Experiência e design
 
@@ -103,3 +105,4 @@ _Agentes: anotem aqui ideias de features novas em vez de implementá-las._
 | Data | Decisão |
 |---|---|
 | 2026-10-04 | `v2` criada a partir de `origin/hiago` + `fix/coleta-ferro-gps-cloro`. `master` congelada na tag `v1.0-estavel` |
+| 2026-10-04 | Foco exclusivo em **Android**: alvos iOS, Mac Catalyst e Windows removidos dos apps. Migração para .NET 10 será antecipada (PR próprio) |
