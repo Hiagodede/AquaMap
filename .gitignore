@@ -365,9 +365,11 @@ FodyWeavers.xsd
 # Environment secrets
 .env
 
-# Claude Code tooling (local assistant config, not part of the product)
-.claude/
-CLAUDE.md
+# Claude Code: CLAUDE.md, .claude/agents and .claude/settings.json are shared team
+# config and ARE versioned; only personal/local files are ignored.
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md
 
 # graphify generated knowledge graph (local cache, regenerate with `graphify update .`)
 graphify-out/
