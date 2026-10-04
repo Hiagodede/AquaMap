@@ -16,8 +16,8 @@ Leia antes de qualquer tarefa:
 | `AquaMap.Client.Shared/` | `ApiService` HTTP compartilhado pelos dois apps | net9.0-android |
 | `AquaMap.Api/` | Minimal APIs, tudo em `Program.cs`, JWT, EF Core + Npgsql | net10.0 |
 | `AquaMap.Domain/` | Entidades e regras puras (`WaterAnalysis.IsPotable` etc.) | net9.0 |
-| `AquaMap.Infrastructure/` | `AppDbContext` e migrations (PostgreSQL) | net9.0 |
-| `AquaMap.Application/` | Vazio (só `Class1.cs`). Decisão pendente no plano | net9.0 |
+| `AquaMap.Infrastructure/` | `AppDbContext` e migrations (PostgreSQL) | net10.0 |
+| `AquaMap.Application/` | Vazio (só `Class1.cs`). Decisão pendente no plano | net10.0 |
 
 Produção: API em `https://aquamap-g0at.onrender.com` (Render.com, PostgreSQL gerenciado). Cold start de até ~1 min; existe `GET /health`.
 

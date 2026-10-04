@@ -72,6 +72,8 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Validação com FluentValidation + `ProblemDetails` padronizado
 - [ ] Usar no cliente `GET /metrics` e `/water-analysis/collection-points`, ou remover esses endpoints
 - [ ] Migrar os apps MAUI e as libs para **.NET 10 LTS**. Alinhar as versões de pacotes (Npgsql, EF). Remover `EntityFrameworkCore.Sqlite` da Infrastructure
+  - [x] Backend: Infrastructure/Application em net10.0, EF/Npgsql 10, sem EF Sqlite/Tools, OpenApi sem vulnerabilidade (PR `chore/dotnet10-backend`)
+  - [ ] Domain, Client.Shared e apps em net10.0-android (PR `chore/dotnet10-apps`; exige teste em emulador/celular)
 - [ ] Decidir o motor de mapa único para os dois apps (hoje: nativo no Técnico, WebView+Leaflet no Cidadão). No Técnico, o caminho WebView de `MapPage.xaml.cs` ainda carrega o OSM a cada `OnAppearing` antes de ser escondido
 
 ## Fase 4 — Experiência e design
