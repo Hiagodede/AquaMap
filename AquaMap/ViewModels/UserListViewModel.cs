@@ -89,7 +89,7 @@ namespace AquaMap.ViewModels
         {
             if (user == null || IsBusy) return;
 
-            bool confirm = await Shell.Current.DisplayAlert("Confirmar", $"Excluir '{user.FullName}'?", "Sim", "Cancelar");
+            bool confirm = await Shell.Current.DisplayAlertAsync("Confirmar", $"Excluir '{user.FullName}'?", "Sim", "Cancelar");
             if (!confirm) return;
 
             var token = await SecureStorage.Default.GetAsync("jwt_token");
@@ -114,7 +114,7 @@ namespace AquaMap.ViewModels
                         null => "Não foi possível excluir o usuário. Verifique sua conexão e tente novamente.",
                         _ => "Não foi possível excluir o usuário."
                     };
-                    await Shell.Current.DisplayAlert("Erro", message, "OK");
+                    await Shell.Current.DisplayAlertAsync("Erro", message, "OK");
                 }
             }
             catch (Exception ex)
@@ -122,7 +122,7 @@ namespace AquaMap.ViewModels
                 System.Diagnostics.Debug.WriteLine($"Erro ao excluir usuário: {ex}");
                 try
                 {
-                    await Shell.Current.DisplayAlert("Erro", "Não foi possível excluir o usuário. Tente novamente.", "OK");
+                    await Shell.Current.DisplayAlertAsync("Erro", "Não foi possível excluir o usuário. Tente novamente.", "OK");
                 }
                 catch (Exception alertEx)
                 {

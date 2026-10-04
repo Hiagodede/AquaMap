@@ -102,7 +102,7 @@ namespace AquaMap.ViewModels
                 try
                 {
                     var filePath = pdfExportService.GenerateReservoirReport(ReservoirName, AnalysisHistory);
-                    await Shell.Current.DisplayAlert("Boletim Gerado", $"PDF salvo em:\n{filePath}", "OK");
+                    await Shell.Current.DisplayAlertAsync("Boletim Gerado", $"PDF salvo em:\n{filePath}", "OK");
                     
                     // Share the file
                     await Microsoft.Maui.ApplicationModel.DataTransfer.Share.Default.RequestAsync(new ShareFileRequest
@@ -116,7 +116,7 @@ namespace AquaMap.ViewModels
                     System.Diagnostics.Debug.WriteLine($"Erro ao exportar PDF: {ex}");
                     try
                     {
-                        await Shell.Current.DisplayAlert("Erro", "Não foi possível exportar o PDF neste aparelho.", "OK");
+                        await Shell.Current.DisplayAlertAsync("Erro", "Não foi possível exportar o PDF neste aparelho.", "OK");
                     }
                     catch (Exception alertEx)
                     {

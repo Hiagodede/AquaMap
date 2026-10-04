@@ -462,7 +462,7 @@ namespace AquaMap.ViewModels
         {
             if (!IsEditing || IsBusy) return;
 
-            bool confirm = await Shell.Current.DisplayAlert("Confirmar", $"Excluir '{ReservoirName}'?", "Sim", "Cancelar");
+            bool confirm = await Shell.Current.DisplayAlertAsync("Confirmar", $"Excluir '{ReservoirName}'?", "Sim", "Cancelar");
             if (!confirm) return;
 
             var token = await SecureStorage.Default.GetAsync("jwt_token");

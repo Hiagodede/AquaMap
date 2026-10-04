@@ -216,7 +216,7 @@ namespace AquaMap.Public.Views
         {
             try
             {
-                await DisplayAlert(title, message, "OK");
+                await DisplayAlertAsync(title, message, "OK");
             }
             catch (Exception ex)
             {

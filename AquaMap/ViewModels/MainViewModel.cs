@@ -78,7 +78,7 @@ namespace AquaMap.ViewModels
                     System.Diagnostics.Debug.WriteLine($"Erro ao abrir reservatório: {ex}");
                     try
                     {
-                        await Shell.Current.DisplayAlert("Erro", $"Não foi possível abrir o reservatório.\n\nDetalhe: {ex.GetType().Name}: {ex.Message}", "OK");
+                        await Shell.Current.DisplayAlertAsync("Erro", $"Não foi possível abrir o reservatório.\n\nDetalhe: {ex.GetType().Name}: {ex.Message}", "OK");
                     }
                     catch (Exception alertEx)
                     {
