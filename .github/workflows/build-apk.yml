@@ -1,0 +1,29 @@
+name: Gerar APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, hiago]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '17'
+      - name: Instalar workload MAUI
+        run: dotnet workload install maui
+      - name: APK do app Tecnico
+        run: dotnet publish AquaMap/AquaMap.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -o out/tecnico
+      - name: APK do app Cidadao
+        run: dotnet publish AquaMap.Public/AquaMap.Public.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -o out/cidadao
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aquamap-apks
+          path: out/**/*-Signed.apk

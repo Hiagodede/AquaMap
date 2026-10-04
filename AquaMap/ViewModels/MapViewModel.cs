@@ -37,7 +37,7 @@ namespace AquaMap.ViewModels
             LoadMapCommand = new Command(async () => await LoadMapDataAsync());
         }
 
-        private async Task LoadMapDataAsync()
+        public async Task LoadMapDataAsync()
         {
             if (IsBusy) return;
             IsBusy = true;

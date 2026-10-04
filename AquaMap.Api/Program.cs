@@ -77,12 +77,23 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Exceção não tratada: o ExceptionHandlerMiddleware registra o erro no log e
+// o cliente recebe só um 500 genérico em JSON, sem stack trace.
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsJsonAsync(new { error = "Erro interno no servidor." });
+}));
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Endpoints
+
+// Health check / aquecimento (cold start do Render): anônimo e sem acesso ao banco
+app.MapGet("/health", () => Results.Ok("ok")).AllowAnonymous();
 
 app.MapPost("/login", async (AppDbContext db, TokenService tokenService, LoginRequest request) =>
 {
@@ -161,6 +172,10 @@ app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
 {
     var reservoir = await db.Reservoirs.FindAsync(id);
     if (reservoir is null) return Results.NotFound();
+    // A FK das análises é em cascata: apagar o reservatório apagaria o histórico de qualidade da água.
+    var hasAnalyses = await db.WaterAnalyses.AnyAsync(w => w.ReservoirId == id);
+    if (hasAnalyses)
+        return Results.Conflict(new { error = "Não é possível excluir: o reservatório possui análises registradas." });
     db.Reservoirs.Remove(reservoir);
     await db.SaveChangesAsync();
     return Results.NoContent();
@@ -170,6 +185,19 @@ app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
 
 app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =>
 {
+    // Npgsql só aceita UTC em timestamptz; o app envia a data UTC sem o "Z" (Kind=Unspecified).
+    analysis.AnalysisDate = analysis.AnalysisDate.Kind switch
+    {
+        DateTimeKind.Utc => analysis.AnalysisDate,
+        DateTimeKind.Local => analysis.AnalysisDate.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(analysis.AnalysisDate, DateTimeKind.Utc)
+    };
+
+    // Campos definidos pelo servidor: ignora o que vier do cliente (evita over-posting / inserir reservatório pelo grafo).
+    analysis.Id = 0;
+    analysis.IsPendingSync = false;
+    analysis.Reservoir = null!;
+
     var validationError = ValidateWaterAnalysis(analysis);
     if (validationError != null) return Results.BadRequest(new { error = validationError });
 
@@ -192,13 +220,28 @@ app.MapGet("/water-analysis/{reservoirId}", async (AppDbContext db, int reservoi
 })
 .WithName("GetWaterAnalysisByReservoir");
 
-app.MapPost("/users", async (AppDbContext db, CreateUserRequest request) =>
+app.MapPost("/users", async (AppDbContext db, CreateUserRequest request, System.Security.Claims.ClaimsPrincipal currentUser) =>
 {
+    // Só um Administrador pode criar outro Administrador (o token leva ClaimTypes.Role, ver TokenService).
+    if (request.Role == UserType.Administrator && !currentUser.IsInRole(nameof(UserType.Administrator)))
+        return Results.Forbid();
+
+    var userValidationError = ValidateCreateUser(request);
+    if (userValidationError != null) return Results.BadRequest(new { error = userValidationError });
+
+    // Npgsql só aceita UTC em timestamptz (mesma causa do B-01).
+    var birthDate = request.BirthDate.Kind switch
+    {
+        DateTimeKind.Utc => request.BirthDate,
+        DateTimeKind.Local => request.BirthDate.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(request.BirthDate, DateTimeKind.Utc)
+    };
+
     var exists = await db.Users.AnyAsync(u => u.TaxId == request.TaxId);
     if (exists) return Results.Conflict("Usuário já cadastrado com esse CPF.");
 
     var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-    var user = new User(request.FullName, request.TaxId, request.BirthDate, request.Address, request.PhoneNumber, request.Email, hash, request.Role);
+    var user = new User(request.FullName, request.TaxId, birthDate, request.Address, request.PhoneNumber, request.Email, hash, request.Role);
     db.Users.Add(user);
     await db.SaveChangesAsync();
     return Results.Created($"/users/{user.Id}", new { user.Id, user.FullName, user.TaxId, user.Role });
@@ -215,10 +258,23 @@ app.MapGet("/users", async (AppDbContext db) =>
 .WithName("GetUsers")
 .RequireAuthorization();
 
-app.MapDelete("/users/{id}", async (AppDbContext db, Guid id) =>
+app.MapDelete("/users/{id}", async (AppDbContext db, Guid id, System.Security.Claims.ClaimsPrincipal currentUser) =>
 {
     var user = await db.Users.FindAsync(id);
     if (user is null) return Results.NotFound();
+
+    // O TokenService grava o Id do usuário em ClaimTypes.NameIdentifier.
+    var currentUserId = currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (Guid.TryParse(currentUserId, out var currentId) && currentId == id)
+        return Results.Conflict(new { error = "Você não pode excluir o próprio usuário." });
+
+    if (user.Role == UserType.Administrator)
+    {
+        var adminCount = await db.Users.CountAsync(u => u.Role == UserType.Administrator);
+        if (adminCount <= 1)
+            return Results.Conflict(new { error = "Não é possível excluir o último administrador." });
+    }
+
     db.Users.Remove(user);
     await db.SaveChangesAsync();
     return Results.NoContent();
@@ -238,12 +294,8 @@ app.MapGet("/metrics", async (AppDbContext db) =>
         .Select(g => g.OrderByDescending(w => w.AnalysisDate).First())
         .ToListAsync();
 
-    var outOfStandard = latestPerReservoir.Count(w =>
-        !(w.ResidualChlorine >= 0.2 && w.ResidualChlorine <= 5.0 &&
-          w.Ph >= 6.0 && w.Ph <= 9.5 &&
-          w.Turbidity <= 5.0 &&
-          w.Iron <= 0.3 &&
-          w.EColiAbsent));
+    // Regra de potabilidade única: WaterAnalysis.IsPotable (domínio). Avaliada em memória, após o ToListAsync.
+    var outOfStandard = latestPerReservoir.Count(w => !w.IsPotable);
 
     var noData = totalReservoirs - latestPerReservoir.Count;
 
@@ -291,6 +343,24 @@ static string? ValidateWaterAnalysis(WaterAnalysis a)
     if (a.ResidualChlorine < 0 || a.ResidualChlorine > 20) return "Cloro residual deve estar entre 0 e 20 mg/L.";
     if (a.Turbidity < 0 || a.Turbidity > 1000) return "Turbidez deve estar entre 0 e 1000 NTU.";
     if (a.Iron < 0 || a.Iron > 100) return "Ferro deve estar entre 0 e 100 mg/L.";
+    if (a.CollectionLatitude is double lat && (lat < -90 || lat > 90)) return "Latitude da coleta deve estar entre -90 e 90.";
+    if (a.CollectionLongitude is double lon && (lon < -180 || lon > 180)) return "Longitude da coleta deve estar entre -180 e 180.";
+    return null;
+}
+
+// Validação de entrada do POST /users (mesmas regras mínimas do app: CPF com 11 dígitos, senha >= 6).
+static string? ValidateCreateUser(CreateUserRequest r)
+{
+    if (string.IsNullOrWhiteSpace(r.FullName)) return "Nome é obrigatório.";
+    if (r.FullName.Length > 150) return "Nome deve ter no máximo 150 caracteres.";
+    if (string.IsNullOrWhiteSpace(r.TaxId)) return "CPF é obrigatório.";
+    if (r.TaxId.Length > 20 || r.TaxId.Count(char.IsDigit) != 11) return "CPF deve conter 11 dígitos.";
+    if (string.IsNullOrWhiteSpace(r.Password) || r.Password.Length < 6) return "Senha deve conter pelo menos 6 caracteres.";
+    if (r.Password.Length > 72) return "Senha deve ter no máximo 72 caracteres.";
+    if (r.Address is null || r.Address.Length > 300) return "Endereço é obrigatório e deve ter no máximo 300 caracteres.";
+    if (r.PhoneNumber is null || r.PhoneNumber.Length > 30) return "Telefone é obrigatório e deve ter no máximo 30 caracteres.";
+    if (r.Email is null || r.Email.Length > 254) return "E-mail é obrigatório e deve ter no máximo 254 caracteres.";
+    if (!Enum.IsDefined(r.Role)) return "Papel (Role) inválido.";
     return null;
 }
 

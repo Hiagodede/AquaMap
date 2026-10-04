@@ -22,9 +22,30 @@ namespace AquaMap.Public.Views
             base.OnAppearing();
             if (_mapRendered) return; // Evitar re-render ao voltar da tela de detalhes
             
-            await _viewModel.LoadDataAsync();
-            RenderMap();
-            _mapRendered = true;
+            await LoadAndRenderAsync();
+        }
+
+        private async void OnRetryClicked(object? sender, EventArgs e)
+        {
+            await LoadAndRenderAsync();
+        }
+
+        private async Task LoadAndRenderAsync()
+        {
+            try
+            {
+                await _viewModel.LoadDataAsync();
+                RenderMap();
+                // Só considera renderizado se vieram dados; senão tenta de novo ao voltar à tela
+                _mapRendered = _viewModel.Reservoirs.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao carregar o mapa: {ex}");
+                _mapRendered = false;
+                // Mostra o painel de erro com "Tentar novamente" (mesmo estado da falha de rede)
+                _viewModel.ErrorMessage = "Não foi possível carregar o mapa. Tente novamente.";
+            }
         }
 
         private void RenderMap()
@@ -164,14 +185,22 @@ namespace AquaMap.Public.Views
 
         private async void OnWebViewNavigating(object? sender, WebNavigatingEventArgs e)
         {
-            if (e.Url.StartsWith("aquamap://details/"))
+            try
             {
-                e.Cancel = true;
-                var idStr = e.Url.Replace("aquamap://details/", "");
-                if (int.TryParse(idStr, out int id))
+                if (e.Url.StartsWith("aquamap://details/"))
                 {
-                    await Shell.Current.GoToAsync($"ReservoirDetailPage?Id={id}");
+                    e.Cancel = true;
+                    var idStr = e.Url.Replace("aquamap://details/", "");
+                    if (int.TryParse(idStr, out int id))
+                    {
+                        await Shell.Current.GoToAsync($"ReservoirDetailPage?Id={id}");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
+                await SafeAlertAsync("Erro", "Não foi possível abrir os detalhes do reservatório.");
             }
         }
 
@@ -180,6 +209,19 @@ namespace AquaMap.Public.Views
             if (r.WaterAnalyses == null || !r.WaterAnalyses.Any()) return "nodata";
             var last = r.WaterAnalyses.OrderByDescending(x => x.AnalysisDate).First();
             return last.IsPotable ? "ok" : "alert";
+        }
+
+        // Alerta que nunca lança (usado dentro de catch de handlers async void).
+        private async Task SafeAlertAsync(string title, string message)
+        {
+            try
+            {
+                await DisplayAlert(title, message, "OK");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {ex}");
+            }
         }
     }
 }

@@ -72,6 +72,19 @@ namespace AquaMap.ViewModels
                 {
                     await Shell.Current.GoToAsync($"ReservoirDetailPage?ReservoirId={r.Id}&ReservoirName={Uri.EscapeDataString(r.Name)}");
                 }
+                catch (Exception ex)
+                {
+                    // Sem este catch, qualquer falha ao montar a tela de detalhes derruba o app.
+                    System.Diagnostics.Debug.WriteLine($"Erro ao abrir reservatório: {ex}");
+                    try
+                    {
+                        await Shell.Current.DisplayAlert("Erro", $"Não foi possível abrir o reservatório.\n\nDetalhe: {ex.GetType().Name}: {ex.Message}", "OK");
+                    }
+                    catch (Exception alertEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {alertEx.Message}");
+                    }
+                }
                 finally
                 {
                     IsBusy = false;
