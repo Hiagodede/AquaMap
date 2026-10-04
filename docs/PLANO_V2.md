@@ -110,3 +110,4 @@ _Agentes: anotem aqui ideias de features novas em vez de implementá-las._
 |---|---|
 | 2026-10-04 | `v2` criada a partir de `origin/hiago` + `fix/coleta-ferro-gps-cloro`. `master` congelada na tag `v1.0-estavel` |
 | 2026-10-04 | Foco exclusivo em **Android**: alvos iOS, Mac Catalyst e Windows removidos dos apps. Migração para .NET 10 será antecipada (PR próprio) |
+| 2026-10-04 | Correção: a `master` **não** ficou na tag. O PR #4 (`hiago`→`master`, commit `cbad168`) foi mergeado depois da tag `v1.0-estavel` (`b05d157`). Confirmar o que o Render está rodando |

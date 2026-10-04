@@ -45,8 +45,8 @@ Os campos de latitude/longitude manuais usam `Keyboard="Numeric"`, que normalmen
 
 - **`AquaMap.Application`** é um projeto vazio na solution (só tem um `Class1.cs` de template) — reservado desde o início do projeto para "casos de uso futuros" e nunca usado. Decidir se mantém ou remove.
 - **`SeedDataService`/`ISeedDataService`** existem, mas não fazem nada (`InitializeAsync` é um `Task.CompletedTask` vazio) e não estão registrados em nenhum DI nem chamados em lugar algum. O único seed real é o usuário admin padrão, inline em `AquaMap.Api/Program.cs`. O README antigo (já corrigido nesta entrega) afirmava que esse serviço recriava o banco com dados de teste — isso nunca foi verdade no código atual.
-- Pacote `Microsoft.EntityFrameworkCore.Sqlite` referenciado em `AquaMap.Infrastructure.csproj` sem uso — o provider ativo é sempre Npgsql/PostgreSQL.
-- Versões do pacote `Npgsql.EntityFrameworkCore.PostgreSQL` divergem entre projetos: `9.0.4` em `AquaMap.Infrastructure` (net9.0) vs `10.0.1` em `AquaMap.Api` (net10.0). Funciona hoje, mas vale alinhar numa próxima manutenção.
+- ~~Pacote `Microsoft.EntityFrameworkCore.Sqlite` referenciado em `AquaMap.Infrastructure.csproj` sem uso~~ (removido na v2).
+- ~~Versões do pacote `Npgsql.EntityFrameworkCore.PostgreSQL` divergem entre projetos~~ (alinhadas em 10.0.3 na v2, com todo o backend em net10.0).
 - Endpoints `GET /metrics` e `GET /water-analysis/collection-points` existem na API mas **nenhum client os consome** — os apps calculam métricas e pontos de coleta client-side a partir dos dados já carregados. Ou é trabalho inacabado, ou dá pra remover os endpoints.
 - Marcadores `GAP 1` a `GAP 7` no código (busca por `GAP ` nos ViewModels/Program.cs) parecem ser numeração interna de um backlog anterior. Todos os números encontrados (1, 2, 3, 4, 5, 7) estão implementados; **não existe `GAP 6` em lugar nenhum** — vale perguntar ao time/cliente se foi descartado ou se ficou pra trás.
 - Zero projetos de teste automatizado na solution. Todo o processo de validação até hoje foi manual (Thunder Client / execução manual dos apps).
