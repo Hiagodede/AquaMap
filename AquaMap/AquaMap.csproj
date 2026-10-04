@@ -2,7 +2,8 @@
 
 	<PropertyGroup>
 		<!-- Android only. iOS/Mac Catalyst/Windows were removed in v2 (see docs/PLANO_V2.md) -->
-		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
+		<MauiVersion>10.0.110</MauiVersion>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>AquaMap</RootNamespace>
@@ -54,11 +55,13 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Maui.Controls.Maps" Version="$(MauiVersion)" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.8" />
-		<PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.1.8" />
+		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+		<PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.1.13" />
+		<!-- Explicit: 2.1.12+ ships 16 KB page-aligned native libs and fixes GHSA-2m69-gcr7-jv3q -->
+		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.13" />
 		<PackageReference Include="QuestPDF" Version="2024.3.4" />
 	</ItemGroup>
 

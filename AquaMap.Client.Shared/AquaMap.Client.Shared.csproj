@@ -2,7 +2,8 @@
 
 	<PropertyGroup>
 		<!-- Android only. iOS/Mac Catalyst/Windows were removed in v2 (see docs/PLANO_V2.md) -->
-		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
+		<MauiVersion>10.0.110</MauiVersion>
 
 		<UseMaui>true</UseMaui>
 		<!-- Only Microsoft.Maui.Essentials (DeviceInfo) is needed here, not Controls/XAML -->
@@ -15,7 +16,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
 	</ItemGroup>
 
 	<ItemGroup>
