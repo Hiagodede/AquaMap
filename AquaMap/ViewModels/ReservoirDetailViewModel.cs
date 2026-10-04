@@ -113,7 +113,15 @@ namespace AquaMap.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Shell.Current.DisplayAlert("Erro", $"Falha ao exportar PDF: {ex.Message}", "OK");
+                    System.Diagnostics.Debug.WriteLine($"Erro ao exportar PDF: {ex}");
+                    try
+                    {
+                        await Shell.Current.DisplayAlert("Erro", "Não foi possível exportar o PDF neste aparelho.", "OK");
+                    }
+                    catch (Exception alertEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {alertEx.Message}");
+                    }
                 }
                 finally
                 {
@@ -130,7 +138,7 @@ namespace AquaMap.ViewModels
             try
             {
                 // 1. Carrega do banco de dados local primeiro (Offline-First)
-                var cached = await _localDbService.GetAnalysisHistoryAsync(ReservoirId).ConfigureAwait(false);
+                var cached = await _localDbService.GetAnalysisHistoryAsync(ReservoirId);
                 if (cached != null && cached.Count > 0)
                 {
                     var mappedHistory = cached.Select(c => new WaterAnalysis
@@ -166,7 +174,7 @@ namespace AquaMap.ViewModels
                 // 2. Busca da API em segundo plano se conectado à internet (Stale-While-Revalidate)
                 if (Connectivity.NetworkAccess == NetworkAccess.Internet)
                 {
-                    var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId).ConfigureAwait(false);
+                    var data = await _apiService.GetWaterAnalysisHistoryAsync(ReservoirId);
                     if (data != null)
                     {
                         // Salva os dados baixados no banco de dados local
@@ -185,10 +193,10 @@ namespace AquaMap.ViewModels
                             IsPendingSync = false
                         }).ToList();
 
-                        await _localDbService.SaveAnalysisHistoryAsync(ReservoirId, localList).ConfigureAwait(false);
+                        await _localDbService.SaveAnalysisHistoryAsync(ReservoirId, localList);
 
                         // Recarrega do banco local para obter a mesclagem com dados que porventura ainda estejam pendentes de sincronização
-                        var merged = await _localDbService.GetAnalysisHistoryAsync(ReservoirId).ConfigureAwait(false);
+                        var merged = await _localDbService.GetAnalysisHistoryAsync(ReservoirId);
                         if (merged != null)
                         {
                             AnalysisHistory.Clear();

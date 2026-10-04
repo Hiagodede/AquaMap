@@ -108,9 +108,9 @@ namespace AquaMap.ViewModels
                 {
                     TaxIdWarning = string.Empty;
                 }
-                else if (cleanCpf.Length != 11 || !IsCpfValid(cleanCpf))
+                else if (cleanCpf.Length != 11)
                 {
-                    TaxIdWarning = "CPF inválido (deve conter 11 dígitos válidos).";
+                    TaxIdWarning = "CPF inválido (deve conter 11 dígitos).";
                 }
                 else
                 {
@@ -144,48 +144,12 @@ namespace AquaMap.ViewModels
             catch (OperationCanceledException) { }
         }
 
-        private static bool IsCpfValid(string cpf)
-        {
-            if (string.IsNullOrWhiteSpace(cpf)) return false;
-            if (cpf.Distinct().Count() == 1) return false;
-
-            int[] multiplier1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-            int[] multiplier2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-
-            string tempCpf = cpf.Substring(0, 9);
-            int sum = 0;
-
-            for (int i = 0; i < 9; i++)
-                sum += (tempCpf[i] - '0') * multiplier1[i];
-
-            int remainder = sum % 11;
-            if (remainder < 2)
-                remainder = 0;
-            else
-                remainder = 11 - remainder;
-
-            string digit = remainder.ToString();
-            tempCpf = tempCpf + digit;
-            sum = 0;
-            for (int i = 0; i < 10; i++)
-                sum += (tempCpf[i] - '0') * multiplier2[i];
-
-            remainder = sum % 11;
-            if (remainder < 2)
-                remainder = 0;
-            else
-                remainder = 11 - remainder;
-
-            digit = digit + remainder.ToString();
-            return cpf.EndsWith(digit);
-        }
-
         private async Task PerformLoginAsync()
         {
             if (IsBusy) return;
 
             string cleanCpf = new string(TaxId.Where(char.IsDigit).ToArray());
-            if (string.IsNullOrWhiteSpace(TaxId) || cleanCpf.Length != 11 || !IsCpfValid(cleanCpf))
+            if (string.IsNullOrWhiteSpace(TaxId) || cleanCpf.Length != 11)
             {
                 ErrorMessage = "Por favor, insira um CPF válido.";
                 return;

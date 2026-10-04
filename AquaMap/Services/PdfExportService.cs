@@ -16,13 +16,12 @@ namespace AquaMap.Services
 {
     public class PdfExportService
     {
-        public PdfExportService()
-        {
-            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-        }
-
         public string GenerateReservoirReport(string reservoirName, IEnumerable<WaterAnalysis> history)
         {
+            // Só toca no QuestPDF na hora de exportar: ele depende de biblioteca nativa
+            // que pode faltar no Android, e a falha não pode derrubar a tela de detalhes.
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
             var historyList = history.ToList();
 
             var document = Document.Create(container =>

@@ -471,13 +471,15 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             try
             {
-                var success = await _apiService.DeleteReservoirAsync(ReservoirId, token);
-                if (success)
+                var result = await _apiService.DeleteReservoirAsync(ReservoirId, token);
+                if (result.Success)
                     await Shell.Current.GoToAsync("..");
                 else
                 {
                     IsSuccess = false;
-                    StatusMessage = "Erro ao excluir reservatório.";
+                    StatusMessage = result.StatusCode == 409
+                        ? "Não é possível excluir: o reservatório possui análises registradas."
+                        : "Erro ao excluir reservatório.";
                 }
             }
             catch (Exception ex)
