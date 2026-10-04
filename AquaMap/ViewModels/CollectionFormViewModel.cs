@@ -354,8 +354,8 @@ namespace AquaMap.ViewModels
                 }
                 else if (double.TryParse(ResidualChlorine.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
                 {
-                    IsChlorineValid = val >= 0.2 && val <= 2.0;
-                    ChlorineWarning = IsChlorineValid ? string.Empty : "Ideal: 0.2 a 2.0 mg/L (Portaria 888)";
+                    IsChlorineValid = val >= 0.2 && val <= 5.0;
+                    ChlorineWarning = IsChlorineValid ? string.Empty : "Ideal: 0.2 a 5.0 mg/L (Portaria 888)";
                 }
                 else
                 {
