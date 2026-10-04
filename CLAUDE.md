@@ -66,7 +66,7 @@ dotnet build AquaMap/AquaMap.csproj -f net9.0-android
 dotnet build AquaMap.Public/AquaMap.Public.csproj -f net9.0-android
 dotnet test                                   # após a Fase 1 criar os projetos de teste
 docker compose up -d db                       # Postgres local (copie .env.example para .env)
-dotnet ef migrations add <Nome> -p AquaMap.Infrastructure -s AquaMap.Api
+dotnet ef migrations add <Nome> -p AquaMap.Infrastructure -s AquaMap.Api   # exige ConnectionStrings__DefaultConnection e Jwt__Key (env var ou user-secrets), mesmo sem banco no ar
 ```
 
 ## Time de agentes (`.claude/agents/`)

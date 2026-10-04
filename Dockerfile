@@ -1,4 +1,4 @@
-# Usa a imagem oficial do .NET SDK 10.0 (ou 9.0 dependendo da versão usada localmente)
+# Usa a imagem oficial do .NET SDK 10.0 (a API e suas libs são net10.0)
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
