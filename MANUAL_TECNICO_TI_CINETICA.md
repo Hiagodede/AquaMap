@@ -8,7 +8,7 @@ Não é preciso instalar nem configurar nenhum servidor/banco de dados para esse
 
 ## 1. O que instalar antes de começar
 
-1. **Visual Studio 2022** (versão Community, que é gratuita, serve): [visualstudio.microsoft.com](https://visualstudio.microsoft.com/pt-br/downloads/)
+1. **Visual Studio 2026** (o .NET 10 não é suportado no 2022) (versão Community, que é gratuita, serve): [visualstudio.microsoft.com](https://visualstudio.microsoft.com/pt-br/downloads/)
    - No instalador, marque a carga de trabalho **".NET Multi-platform App UI development"** (aparece na lista de "Cargas de trabalho"/"Workloads"). Essa opção já instala junto o SDK do Android e o emulador — não precisa instalar Android Studio separado.
 2. **Git for Windows**: [git-scm.com/download/win](https://git-scm.com/download/win) — para baixar o código. Se preferir uma interface gráfica em vez de linha de comando, pode instalar o **GitHub Desktop** ([desktop.github.com](https://desktop.github.com/)) no lugar.
 3. (Opcional, só se for testar num celular físico) Um **cabo USB** e um celular Android.
@@ -55,7 +55,7 @@ Desde a v2, os dois apps são **só Android**: o alvo "Windows Machine" (`net9.0
 
 1. No Visual Studio, abra o **Gerenciador de Dispositivos Android**: menu `Ferramentas > Android > Android Device Manager` (ou procure o ícone de celular na barra de ferramentas).
 2. Se não houver nenhum dispositivo virtual criado, clique em **"New"** (Novo) e crie um — recomendo um perfil "Pixel" com Android 13 (API 33) ou superior. Clique em **Create**, depois **Start** para ligar o emulador.
-3. Volte para o menu suspenso de alvo de execução (o mesmo do passo 4.2) e selecione o emulador Android que acabou de criar (o Visual Studio troca o TFM automaticamente para `net9.0-android`).
+3. Abra o menu suspenso de alvo de execução (ao lado do botão verde ▶, na barra de ferramentas) e selecione o emulador Android que acabou de criar (o Visual Studio usa o TFM `net10.0-android`).
 4. Aperte **F5**. A primeira execução demora mais (compila para Android e o emulador precisa terminar de ligar) — nas próximas é mais rápido.
 
 ## 6. Testar num celular Android físico
@@ -74,7 +74,7 @@ Use esse caminho se quiser distribuir o app para alguém testar sem precisar con
 2. Selecione o alvo **Android**.
 3. No modo de distribuição, escolha **"Ad Hoc"** (instalação direta fora da Play Store, ideal para testes internos).
 4. Se o assistente pedir uma identidade de assinatura ("Signing identity") e não houver nenhuma configurada ainda, escolha a opção de **criar uma nova** (o próprio Visual Studio gera um certificado de teste) — o projeto não tem uma keystore de produção configurada ainda, então essa é a opção esperada.
-5. Conclua o assistente. Ele gera um arquivo `.apk` (por padrão em algo como `AquaMap\bin\Release\net9.0-android\publish\`).
+5. Conclua o assistente. Ele gera um arquivo `.apk` (por padrão em algo como `AquaMap\bin\Release\net10.0-android\publish\`).
 6. Copie esse `.apk` para o celular por qualquer meio (cabo USB, e-mail, Google Drive, WhatsApp Web etc.).
 7. No celular, abra o arquivo `.apk` pelo gerenciador de arquivos. Se aparecer um aviso de **"instalar apps de fontes desconhecidas"**, autorize para esse app/origem.
 8. Toque em **Instalar** e depois **Abrir**.

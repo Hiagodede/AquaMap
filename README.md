@@ -47,7 +47,7 @@ Não existe projeto de testes automatizados na solution — veja **HANDOFF.md** 
 
 Mais rápido para testar a UI — os dois apps já vêm configurados (inclusive em Debug) para apontar para a API em produção (`https://aquamap-g0at.onrender.com`).
 
-1. Abra `AquaMap.sln` no Visual Studio 2022 (17.12+), com a workload **".NET Multi-platform App UI development"** instalada.
+1. Abra `AquaMap.sln` no Visual Studio 2026 (necessário para o .NET 10), com a workload **".NET Multi-platform App UI development"** instalada.
 2. Defina `AquaMap` (técnico) ou `AquaMap.Public` (cidadão) como projeto de inicialização.
 3. Escolha um emulador Android ou um celular físico (os apps são só Android desde a v2).
 4. F5.

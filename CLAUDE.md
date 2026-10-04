@@ -11,11 +11,11 @@ Leia antes de qualquer tarefa:
 
 | Projeto | O que é | Framework |
 |---|---|---|
-| `AquaMap/` | App do **técnico** (MAUI): login JWT, CRUD de reservatórios, coleta, PDF, offline-first com SQLite | net9.0-android |
-| `AquaMap.Public/` | App do **cidadão** (MAUI): só leitura, sem login, sempre online | net9.0-android |
-| `AquaMap.Client.Shared/` | `ApiService` HTTP compartilhado pelos dois apps | net9.0-android |
+| `AquaMap/` | App do **técnico** (MAUI): login JWT, CRUD de reservatórios, coleta, PDF, offline-first com SQLite | net10.0-android |
+| `AquaMap.Public/` | App do **cidadão** (MAUI): só leitura, sem login, sempre online | net10.0-android |
+| `AquaMap.Client.Shared/` | `ApiService` HTTP compartilhado pelos dois apps | net10.0-android |
 | `AquaMap.Api/` | Minimal APIs, tudo em `Program.cs`, JWT, EF Core + Npgsql | net10.0 |
-| `AquaMap.Domain/` | Entidades e regras puras (`WaterAnalysis.IsPotable` etc.) | net9.0 |
+| `AquaMap.Domain/` | Entidades e regras puras (`WaterAnalysis.IsPotable` etc.) | net10.0 |
 | `AquaMap.Infrastructure/` | `AppDbContext` e migrations (PostgreSQL) | net10.0 |
 | `AquaMap.Application/` | Vazio (só `Class1.cs`). Decisão pendente no plano | net10.0 |
 
@@ -62,8 +62,8 @@ Uma tarefa só está pronta quando:
 ```bash
 dotnet build AquaMap.Api/AquaMap.Api.csproj
 dotnet build AquaMap.sln                      # solution inteira (apps só Android)
-dotnet build AquaMap/AquaMap.csproj -f net9.0-android
-dotnet build AquaMap.Public/AquaMap.Public.csproj -f net9.0-android
+dotnet build AquaMap/AquaMap.csproj -f net10.0-android
+dotnet build AquaMap.Public/AquaMap.Public.csproj -f net10.0-android
 dotnet test                                   # após a Fase 1 criar os projetos de teste
 docker compose up -d db                       # Postgres local (copie .env.example para .env)
 dotnet ef migrations add <Nome> -p AquaMap.Infrastructure -s AquaMap.Api   # exige ConnectionStrings__DefaultConnection e Jwt__Key (env var ou user-secrets), mesmo sem banco no ar

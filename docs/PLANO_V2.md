@@ -32,6 +32,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Rodar os dois apps no emulador Android ou no celular (sem emulador instalado ainda; cuidado: Debug aponta para produção)
 - [ ] Testar no celular: o app Cidadão abre (M-01) e uma coleta offline sincroniza com Ferro e GPS
 - [ ] Decidir se essas correções também vão para a produção atual antes da v2 (hotfix). Se sim: APK novo do Técnico instalado **antes** do redeploy da API
+- [ ] **Assinatura dos APKs (bloqueia instalar qualquer APK novo nos celulares):** hoje todo APK sai com chave de debug efêmera, e o Android recusa atualizar um app assinado com outra chave. Desinstalar apaga o `aquamap.db3` com as coletas pendentes. Antes de trocar o app de um técnico: (a) sincronizar todas as pendências com o APK antigo, ou (b) recuperar a keystore que assinou o APK instalado e passar a usá-la
 
 ## Fase 1 — Base de qualidade (antes de qualquer feature)
 
@@ -73,7 +74,8 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Usar no cliente `GET /metrics` e `/water-analysis/collection-points`, ou remover esses endpoints
 - [ ] Migrar os apps MAUI e as libs para **.NET 10 LTS**. Alinhar as versões de pacotes (Npgsql, EF). Remover `EntityFrameworkCore.Sqlite` da Infrastructure
   - [x] Backend: Infrastructure/Application em net10.0, EF/Npgsql 10, sem EF Sqlite/Tools, OpenApi sem vulnerabilidade (PR `chore/dotnet10-backend`)
-  - [ ] Domain, Client.Shared e apps em net10.0-android (PR `chore/dotnet10-apps`; exige teste em emulador/celular)
+  - [ ] Domain, Client.Shared e apps em net10.0-android (PR `chore/dotnet10-apps`: compila sem avisos novos; falta testar em emulador/celular, inclusive atualizar por cima do APK .NET 9 sem perder coletas pendentes)
+- [ ] PDF do Técnico: o QuestPDF não suporta mais Android desde a 2024.3 (aviso XA0141 de 16 KB e provável falha ao exportar no celular). Decidir: `Android.Graphics.Pdf` nativo, PDF gerado na API ou outra biblioteca. Conferir a licença do QuestPDF para órgão público
 - [ ] Decidir o motor de mapa único para os dois apps (hoje: nativo no Técnico, WebView+Leaflet no Cidadão). No Técnico, o caminho WebView de `MapPage.xaml.cs` ainda carrega o OSM a cada `OnAppearing` antes de ser escondido
 
 ## Fase 4 — Experiência e design
