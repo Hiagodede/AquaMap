@@ -29,6 +29,25 @@ namespace AquaMap.Views
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
+        // Popping back to LoginPage makes its OnAppearing push this page again while the pop
+        // transition is still running; on Android the overlapping navigations can leave a black
+        // screen. Leave the form by switching to the Reservoirs tab instead ("Sair" still logs out).
+        protected override bool OnBackButtonPressed()
+        {
+            Dispatcher.Dispatch(async () =>
+            {
+                try
+                {
+                    await Shell.Current.GoToAsync("//MainPage");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erro ao sair do formulário: {ex}");
+                }
+            });
+            return true;
+        }
+
         // ── Controle do mapa ──────────────────────────────────────────────────
         private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {

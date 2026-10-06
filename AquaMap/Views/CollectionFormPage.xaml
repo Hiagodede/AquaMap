@@ -15,6 +15,11 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
+    <!-- The title-bar back arrow would pop to LoginPage (see OnBackButtonPressed); "Sair" logs out -->
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IsVisible="False" />
+    </Shell.BackButtonBehavior>
+
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Técnicos" Command="{Binding ManageUsersCommand}" />
         <ToolbarItem Text="Sair" Command="{Binding LogoutCommand}" />
