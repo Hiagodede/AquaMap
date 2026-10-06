@@ -20,6 +20,10 @@ namespace AquaMap.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
+            // Re-subscribe: the page instance survives tab switches and child pages, and
+            // OnDisappearing unsubscribes (without this the map picker never loads again).
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.LoadReservoirsCommand.Execute(null);
         }
 
