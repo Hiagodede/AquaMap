@@ -651,8 +651,8 @@ namespace AquaMap.ViewModels
                 double? finalLat = _internalLatitude, finalLng = _internalLongitude;
                 if (!finalLat.HasValue && !string.IsNullOrWhiteSpace(CollectionLatitude) && !string.IsNullOrWhiteSpace(CollectionLongitude))
                 {
-                    if (double.TryParse(CollectionLatitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l1) &&
-                        double.TryParse(CollectionLongitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l2))
+                    if (double.TryParse(CollectionLatitude.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l1) &&
+                        double.TryParse(CollectionLongitude.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l2))
                     {
                         finalLat = l1;
                         finalLng = l2;
