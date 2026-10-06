@@ -40,7 +40,7 @@ namespace AquaMap.Models
         public bool IsPendingSync { get; set; }
 
         [Ignore]
-        public bool IsChlorineValid => ResidualChlorine >= 0.2 && ResidualChlorine <= 2.0;
+        public bool IsChlorineValid => ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0;
 
         [Ignore]
         public bool IsPhValid => Ph >= 6.0 && Ph <= 9.5;

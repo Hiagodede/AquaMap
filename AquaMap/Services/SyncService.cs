@@ -76,6 +76,9 @@ namespace AquaMap.Services
                         Ph = localAnalysis.Ph,
                         Turbidity = localAnalysis.Turbidity,
                         EColiAbsent = localAnalysis.EColiAbsent,
+                        Iron = localAnalysis.Iron,
+                        CollectionLatitude = localAnalysis.CollectionLatitude,
+                        CollectionLongitude = localAnalysis.CollectionLongitude,
                         ReservoirId = localAnalysis.ReservoirId,
                         AnalysisDate = localAnalysis.AnalysisDate
                     };
