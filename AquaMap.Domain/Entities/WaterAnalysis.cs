@@ -24,18 +24,31 @@ namespace AquaMap.Domain.Entities
         public int ReservoirId { get; set; }
         public Reservoir Reservoir { get; set; } = null!;
 
+        // Potability standard (Portaria GM/MS 888/2021). Single source for apps, API and PDF.
+        public const double ChlorineMin = 0.2;   // mg/L
+        public const double ChlorineMax = 5.0;   // mg/L
+        public const double PhMin = 6.0;
+        public const double PhMax = 9.5;
+        public const double TurbidityMax = 5.0;  // NTU
+        public const double IronMax = 0.3;       // mg/L
+
+        public static bool IsChlorineWithinStandard(double value) => value >= ChlorineMin && value <= ChlorineMax;
+        public static bool IsPhWithinStandard(double value) => value >= PhMin && value <= PhMax;
+        public static bool IsTurbidityWithinStandard(double value) => value <= TurbidityMax;
+        public static bool IsIronWithinStandard(double value) => value <= IronMax;
+
         // Validações individuais para destaque na UI
-        public bool IsChlorineValid => ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0;
-        public bool IsPhValid => Ph >= 6.0 && Ph <= 9.5;
-        public bool IsTurbidityValid => Turbidity <= 5.0;
-        public bool IsIronValid => Iron <= 0.3;
+        public bool IsChlorineValid => IsChlorineWithinStandard(ResidualChlorine);
+        public bool IsPhValid => IsPhWithinStandard(Ph);
+        public bool IsTurbidityValid => IsTurbidityWithinStandard(Turbidity);
+        public bool IsIronValid => IsIronWithinStandard(Iron);
 
         // Cálculo de Potabilidade encapsulado
-        public bool IsPotable => 
-            ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0 &&
-            Ph >= 6.0 && Ph <= 9.5 &&
-            Turbidity <= 5.0 &&
-            Iron <= 0.3 &&
+        public bool IsPotable =>
+            IsChlorineValid &&
+            IsPhValid &&
+            IsTurbidityValid &&
+            IsIronValid &&
             EColiAbsent;
     }
 }

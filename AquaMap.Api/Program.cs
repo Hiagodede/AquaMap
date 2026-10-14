@@ -339,10 +339,8 @@ app.Run();
 // não rejeita leituras fora da Portaria 888 — isso é o propósito do registro).
 static string? ValidateWaterAnalysis(WaterAnalysis a)
 {
-    if (a.Ph < 0 || a.Ph > 14) return "pH deve estar entre 0 e 14.";
-    if (a.ResidualChlorine < 0 || a.ResidualChlorine > 20) return "Cloro residual deve estar entre 0 e 20 mg/L.";
-    if (a.Turbidity < 0 || a.Turbidity > 1000) return "Turbidez deve estar entre 0 e 1000 NTU.";
-    if (a.Iron < 0 || a.Iron > 100) return "Ferro deve estar entre 0 e 100 mg/L.";
+    var physicalError = WaterAnalysisInput.GetPhysicalLimitError(a.ResidualChlorine, a.Ph, a.Turbidity, a.Iron);
+    if (physicalError != null) return physicalError;
     if (a.CollectionLatitude is double lat && (lat < -90 || lat > 90)) return "Latitude da coleta deve estar entre -90 e 90.";
     if (a.CollectionLongitude is double lon && (lon < -180 || lon > 180)) return "Longitude da coleta deve estar entre -180 e 180.";
     return null;
