@@ -1,4 +1,5 @@
 using System;
+using AquaMap.Domain.Entities;
 using SQLite;
 
 namespace AquaMap.Models
@@ -39,25 +40,21 @@ namespace AquaMap.Models
         [Indexed]
         public bool IsPendingSync { get; set; }
 
+        // Portaria 888 rules live only in the domain (CLAUDE.md, rule 3).
         [Ignore]
-        public bool IsChlorineValid => ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0;
+        public bool IsChlorineValid => WaterAnalysis.IsChlorineWithinStandard(ResidualChlorine);
 
         [Ignore]
-        public bool IsPhValid => Ph >= 6.0 && Ph <= 9.5;
+        public bool IsPhValid => WaterAnalysis.IsPhWithinStandard(Ph);
 
         [Ignore]
-        public bool IsTurbidityValid => Turbidity <= 5.0;
+        public bool IsTurbidityValid => WaterAnalysis.IsTurbidityWithinStandard(Turbidity);
 
         [Ignore]
-        public bool IsIronValid => Iron <= 0.3;
+        public bool IsIronValid => WaterAnalysis.IsIronWithinStandard(Iron);
 
         [Ignore]
-        public bool IsPotable => 
-            ResidualChlorine >= 0.2 && ResidualChlorine <= 5.0 &&
-            Ph >= 6.0 && Ph <= 9.5 &&
-            Turbidity <= 5.0 &&
-            Iron <= 0.3 &&
-            EColiAbsent;
+        public bool IsPotable => IsChlorineValid && IsPhValid && IsTurbidityValid && IsIronValid && EColiAbsent;
     }
 
     public class LocalUser

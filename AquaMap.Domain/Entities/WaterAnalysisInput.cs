@@ -9,22 +9,33 @@ namespace AquaMap.Domain.Entities
     /// </summary>
     public static class WaterAnalysisInput
     {
+        // Physical limits: beyond these a value is a typing or instrument error, not a water quality alert.
+        public static string? ChlorinePhysicalError(double value) => value < 0 || value > 20 ? "Cloro residual deve estar entre 0 e 20 mg/L." : null;
+        public static string? PhPhysicalError(double value) => value < 0 || value > 14 ? "pH deve estar entre 0 e 14." : null;
+        public static string? TurbidityPhysicalError(double value) => value < 0 || value > 1000 ? "Turbidez deve estar entre 0 e 1000 NTU." : null;
+        public static string? IronPhysicalError(double value) => value < 0 || value > 100 ? "Ferro deve estar entre 0 e 100 mg/L." : null;
+
         /// <summary>Returns an error for values that cannot be real measurements, or null when plausible.</summary>
-        public static string? GetPhysicalLimitError(double residualChlorine, double ph, double turbidity, double iron)
-        {
-            if (ph < 0 || ph > 14) return "pH deve estar entre 0 e 14.";
-            if (residualChlorine < 0 || residualChlorine > 20) return "Cloro residual deve estar entre 0 e 20 mg/L.";
-            if (turbidity < 0 || turbidity > 1000) return "Turbidez deve estar entre 0 e 1000 NTU.";
-            if (iron < 0 || iron > 100) return "Ferro deve estar entre 0 e 100 mg/L.";
-            return null;
-        }
+        public static string? GetPhysicalLimitError(double residualChlorine, double ph, double turbidity, double iron) =>
+            PhPhysicalError(ph) ?? ChlorinePhysicalError(residualChlorine) ?? TurbidityPhysicalError(turbidity) ?? IronPhysicalError(iron);
+
+        public static string ChlorineStandardText => $"{Format(WaterAnalysis.ChlorineMin)} a {Format(WaterAnalysis.ChlorineMax)} mg/L";
+        public static string PhStandardText => $"{Format(WaterAnalysis.PhMin)} a {Format(WaterAnalysis.PhMax)}";
+        public static string TurbidityStandardText => $"até {Format(WaterAnalysis.TurbidityMax)} NTU";
+        public static string IronStandardText => $"até {Format(WaterAnalysis.IronMax)} mg/L";
+
+        // Live hints while typing: physical error, out-of-standard notice, or null when within the standard.
+        public static string? DescribeChlorine(double value) => ChlorinePhysicalError(value) ?? (WaterAnalysis.IsChlorineWithinStandard(value) ? null : OutOfStandardHint(ChlorineStandardText));
+        public static string? DescribePh(double value) => PhPhysicalError(value) ?? (WaterAnalysis.IsPhWithinStandard(value) ? null : OutOfStandardHint(PhStandardText));
+        public static string? DescribeTurbidity(double value) => TurbidityPhysicalError(value) ?? (WaterAnalysis.IsTurbidityWithinStandard(value) ? null : OutOfStandardHint(TurbidityStandardText));
+        public static string? DescribeIron(double value) => IronPhysicalError(value) ?? (WaterAnalysis.IsIronWithinStandard(value) ? null : OutOfStandardHint(IronStandardText));
 
         /// <summary>Parses a reading typed with either ',' or '.' as decimal separator.</summary>
         public static bool TryParseReading(string? text, out double value)
         {
             value = 0;
             if (string.IsNullOrWhiteSpace(text)) return false;
-            // No exponent or thousands separator: "1e3" or "1.000,5" are typos, not readings.
+            // No exponent or thousands separator: "1e3" or "1 000" are typos, not readings.
             const NumberStyles readingStyle = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
             return double.TryParse(text.Trim().Replace(',', '.'), readingStyle, CultureInfo.InvariantCulture, out value)
                 && double.IsFinite(value);
@@ -55,14 +66,16 @@ namespace AquaMap.Domain.Entities
             };
 
             var outOfStandard = new List<string>();
-            if (!analysis.IsChlorineValid) outOfStandard.Add($"Cloro residual {Format(chlorineValue)} mg/L (padrão: {Format(WaterAnalysis.ChlorineMin)} a {Format(WaterAnalysis.ChlorineMax)} mg/L)");
-            if (!analysis.IsPhValid) outOfStandard.Add($"pH {Format(phValue)} (padrão: {Format(WaterAnalysis.PhMin)} a {Format(WaterAnalysis.PhMax)})");
-            if (!analysis.IsTurbidityValid) outOfStandard.Add($"Turbidez {Format(turbidityValue)} NTU (padrão: até {Format(WaterAnalysis.TurbidityMax)} NTU)");
-            if (!analysis.IsIronValid) outOfStandard.Add($"Ferro {Format(ironValue)} mg/L (padrão: até {Format(WaterAnalysis.IronMax)} mg/L)");
+            if (!analysis.IsChlorineValid) outOfStandard.Add($"Cloro residual {Format(chlorineValue)} mg/L (padrão: {ChlorineStandardText})");
+            if (!analysis.IsPhValid) outOfStandard.Add($"pH {Format(phValue)} (padrão: {PhStandardText})");
+            if (!analysis.IsTurbidityValid) outOfStandard.Add($"Turbidez {Format(turbidityValue)} NTU (padrão: {TurbidityStandardText})");
+            if (!analysis.IsIronValid) outOfStandard.Add($"Ferro {Format(ironValue)} mg/L (padrão: {IronStandardText})");
             if (!analysis.EColiAbsent) outOfStandard.Add("E. coli presente (padrão: ausente)");
 
             return new WaterAnalysisInputResult(analysis, null, outOfStandard);
         }
+
+        private static string OutOfStandardHint(string standard) => $"Fora do padrão da Portaria 888 ({standard}). Será registrado como alerta.";
 
         private static string Format(double value) => value.ToString("0.0##", CultureInfo.GetCultureInfo("pt-BR"));
     }

@@ -356,13 +356,6 @@ namespace AquaMap.ViewModels
             Preferences.Default.Remove("Draft_Collection_Iron");
         }
 
-        // Out-of-standard readings are recorded as alerts; only physically impossible ones are rejected on submit.
-
-        private static string OutOfStandardWarning(string? physicalError, string standard) =>
-
-            physicalError ?? $"Fora do padrão da Portaria 888 ({standard}). Será registrado como alerta.";
-
-
         private System.Threading.CancellationTokenSource? _chlorineCts;
         private async Task ValidateChlorineAsync()
         {
@@ -378,8 +371,8 @@ namespace AquaMap.ViewModels
                 }
                 else if (WaterAnalysisInput.TryParseReading(ResidualChlorine, out double val))
                 {
-                    IsChlorineValid = WaterAnalysis.IsChlorineWithinStandard(val);
-                    ChlorineWarning = IsChlorineValid ? string.Empty : OutOfStandardWarning(WaterAnalysisInput.GetPhysicalLimitError(val, 7, 0, 0), $"{WaterAnalysis.ChlorineMin} a {WaterAnalysis.ChlorineMax} mg/L");
+                    ChlorineWarning = WaterAnalysisInput.DescribeChlorine(val) ?? string.Empty;
+                    IsChlorineValid = ChlorineWarning.Length == 0;
                 }
                 else
                 {
@@ -405,8 +398,8 @@ namespace AquaMap.ViewModels
                 }
                 else if (WaterAnalysisInput.TryParseReading(Ph, out double val))
                 {
-                    IsPhValid = WaterAnalysis.IsPhWithinStandard(val);
-                    PhWarning = IsPhValid ? string.Empty : OutOfStandardWarning(WaterAnalysisInput.GetPhysicalLimitError(1, val, 0, 0), $"{WaterAnalysis.PhMin} a {WaterAnalysis.PhMax}");
+                    PhWarning = WaterAnalysisInput.DescribePh(val) ?? string.Empty;
+                    IsPhValid = PhWarning.Length == 0;
                 }
                 else
                 {
@@ -432,8 +425,8 @@ namespace AquaMap.ViewModels
                 }
                 else if (WaterAnalysisInput.TryParseReading(Turbidity, out double val))
                 {
-                    IsTurbidityValid = val >= 0 && WaterAnalysis.IsTurbidityWithinStandard(val);
-                    TurbidityWarning = IsTurbidityValid ? string.Empty : OutOfStandardWarning(WaterAnalysisInput.GetPhysicalLimitError(1, 7, val, 0), $"até {WaterAnalysis.TurbidityMax} NTU");
+                    TurbidityWarning = WaterAnalysisInput.DescribeTurbidity(val) ?? string.Empty;
+                    IsTurbidityValid = TurbidityWarning.Length == 0;
                 }
                 else
                 {
@@ -460,8 +453,8 @@ namespace AquaMap.ViewModels
                 }
                 else if (WaterAnalysisInput.TryParseReading(Iron, out double val))
                 {
-                    IsIronValid = val >= 0 && WaterAnalysis.IsIronWithinStandard(val);
-                    IronWarning = IsIronValid ? string.Empty : OutOfStandardWarning(WaterAnalysisInput.GetPhysicalLimitError(1, 7, 0, val), $"até {WaterAnalysis.IronMax} mg/L");
+                    IronWarning = WaterAnalysisInput.DescribeIron(val) ?? string.Empty;
+                    IsIronValid = IronWarning.Length == 0;
                 }
                 else
                 {
@@ -646,6 +639,8 @@ namespace AquaMap.ViewModels
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Erro ao confirmar parâmetros: {ex}");
+                    IsSuccess = false;
+                    StatusMessage = "Não foi possível confirmar os parâmetros. Tente enviar novamente.";
                     confirmed = false;
                 }
                 finally

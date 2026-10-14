@@ -70,10 +70,30 @@ public class WaterAnalysisInputTests
         Assert.NotNull(result.Error);
     }
 
+    [Fact]
+    public void Physical_limits_are_inclusive()
+    {
+        var result = Validate(chlorine: "20", ph: "14", turbidity: "1000", iron: "100");
+
+        Assert.True(result.IsValid);
+        Assert.Equal(4, result.OutOfStandard.Count);
+    }
+
+    [Fact]
+    public void Every_out_of_standard_parameter_is_listed()
+    {
+        var result = Validate("0.05", "10", "8", "0.8", eColiAbsent: false);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(5, result.OutOfStandard.Count);
+    }
+
     [Theory]
     [InlineData("abc")]
     [InlineData("1e3")]
-    [InlineData("1.000,5")]
+    [InlineData("1 000")]
+    [InlineData("NaN")]
+    [InlineData("Infinity")]
     [InlineData(" ")]
     public void Non_numeric_reading_is_rejected(string chlorine)
     {
@@ -89,6 +109,15 @@ public class WaterAnalysisInputTests
         Assert.Equal(dot.Analysis!.ResidualChlorine, comma.Analysis!.ResidualChlorine);
         Assert.Equal(1.5, comma.Analysis.ResidualChlorine);
         Assert.Equal(7.2, comma.Analysis.Ph);
+    }
+
+    [Theory]
+    [InlineData(1.0, null)]
+    [InlineData(0.05, "Fora do padrão da Portaria 888 (0,2 a 5,0 mg/L). Será registrado como alerta.")]
+    [InlineData(-1.0, "Cloro residual deve estar entre 0 e 20 mg/L.")]
+    public void Live_hint_distinguishes_alert_from_impossible_value(double chlorine, string? expected)
+    {
+        Assert.Equal(expected, WaterAnalysisInput.DescribeChlorine(chlorine));
     }
 
     [Fact]
