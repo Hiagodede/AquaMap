@@ -20,6 +20,10 @@ namespace AquaMap.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
+            // Re-subscribe: the page instance survives tab switches and child pages, and
+            // OnDisappearing unsubscribes (without this the map picker never loads again).
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.LoadReservoirsCommand.Execute(null);
         }
 
@@ -27,6 +31,25 @@ namespace AquaMap.Views
         {
             base.OnDisappearing();
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
+
+        // Popping back to LoginPage makes its OnAppearing push this page again while the pop
+        // transition is still running; on Android the overlapping navigations can leave a black
+        // screen. Leave the form by switching to the Reservoirs tab instead ("Sair" still logs out).
+        protected override bool OnBackButtonPressed()
+        {
+            Dispatcher.Dispatch(async () =>
+            {
+                try
+                {
+                    await Shell.Current.GoToAsync("//MainPage");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erro ao sair do formulário: {ex}");
+                }
+            });
+            return true;
         }
 
         // ── Controle do mapa ──────────────────────────────────────────────────

@@ -19,10 +19,28 @@ jobs:
           java-version: '17'
       - name: Instalar workload MAUI
         run: dotnet workload install maui
+      - name: Keystore de assinatura
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        shell: pwsh
+        run: |
+          if (-not $env:ANDROID_KEYSTORE_BASE64 -or -not $env:ANDROID_KEYSTORE_PASSWORD) {
+            Write-Error "Configure os secrets ANDROID_KEYSTORE_BASE64 e ANDROID_KEYSTORE_PASSWORD no repositório."
+            exit 1
+          }
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\aquamap-release.keystore", [Convert]::FromBase64String($env:ANDROID_KEYSTORE_BASE64))
+      # Mesma chave em todo build: o Android só instala uma versão nova por cima se a assinatura for igual.
+      # versionCode = número da execução: cresce a cada build, então o Android aceita como atualização.
+      # NÃO renomeie este arquivo: o run_number recomeçaria em 1 e os aparelhos recusariam a atualização.
       - name: APK do app Tecnico
-        run: dotnet publish AquaMap/AquaMap.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -o out/tecnico
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: dotnet publish AquaMap/AquaMap.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -p:ApplicationVersion=${{ github.run_number }} -p:ApplicationDisplayVersion=1.0.${{ github.run_number }} -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=${{ runner.temp }}\aquamap-release.keystore -p:AndroidSigningKeyAlias=aquamap -p:AndroidSigningStorePass=env:ANDROID_KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=env:ANDROID_KEYSTORE_PASSWORD -o out/tecnico
       - name: APK do app Cidadao
-        run: dotnet publish AquaMap.Public/AquaMap.Public.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -o out/cidadao
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: dotnet publish AquaMap.Public/AquaMap.Public.csproj -f net9.0-android -c Release -p:AndroidPackageFormats=apk -p:ApplicationVersion=${{ github.run_number }} -p:ApplicationDisplayVersion=1.0.${{ github.run_number }} -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=${{ runner.temp }}\aquamap-release.keystore -p:AndroidSigningKeyAlias=aquamap -p:AndroidSigningStorePass=env:ANDROID_KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=env:ANDROID_KEYSTORE_PASSWORD -o out/cidadao
       - uses: actions/upload-artifact@v4
         with:
           name: aquamap-apks

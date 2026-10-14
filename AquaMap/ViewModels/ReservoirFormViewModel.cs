@@ -399,8 +399,8 @@ namespace AquaMap.ViewModels
             // Tenta parsear as coordenadas dos campos internos ou dos Entry manuais
             double lat = _latitude, lon = _longitude;
             bool coordsOk = (lat != 0 && lon != 0) ||
-                            (double.TryParse(ReservoirLatitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lat) &&
-                             double.TryParse(ReservoirLongitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lon));
+                            (double.TryParse(ReservoirLatitude?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lat) &&
+                             double.TryParse(ReservoirLongitude?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lon));
 
             if (!coordsOk)
             {

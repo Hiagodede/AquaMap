@@ -46,6 +46,21 @@ namespace AquaMap
                     }
                 }
             });
+
+            // On pt-BR devices Android's numeric key listener only accepts ',' as the decimal
+            // separator, so typing '.' is silently blocked. Accept both (the view models parse
+            // either) plus '-' for coordinates. SetRawInputType keeps the numeric keyboard.
+            Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping(nameof(Entry.Keyboard), (handler, view) =>
+            {
+                if (view is Entry entry && entry.Keyboard == Keyboard.Numeric)
+                {
+                    handler.PlatformView.KeyListener = Android.Text.Method.DigitsKeyListener.GetInstance("0123456789.,-");
+                    handler.PlatformView.SetRawInputType(
+                        Android.Text.InputTypes.ClassNumber |
+                        Android.Text.InputTypes.NumberFlagDecimal |
+                        Android.Text.InputTypes.NumberFlagSigned);
+                }
+            });
 #endif
 
 #if DEBUG
