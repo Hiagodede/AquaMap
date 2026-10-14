@@ -40,7 +40,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Seed de dados de teste **apenas** em Development/Staging (remover ou corrigir o `SeedDataService` morto)
 
 **Testes**
-- [ ] `tests/AquaMap.Domain.Tests` (xUnit): cobertura completa das faixas da Portaria 888, incluindo os limites (0,2 / 5,0 / 6,0 / 9,5 / 5,0 / 0,3)
+- [x] `tests/AquaMap.Domain.Tests` (xUnit): cobertura completa das faixas da Portaria 888, incluindo os limites (0,2 / 5,0 / 6,0 / 9,5 / 5,0 / 0,3) (PR `fix/coleta-regras`; ainda falta rodar no CI)
 - [ ] `tests/AquaMap.Api.Tests`: `WebApplicationFactory` + **Testcontainers (PostgreSQL real)**, cobrindo login, CRUD e as regras de autorização
 - [ ] Testes do `SyncService` / `LocalWaterAnalysis` (mapeamento de todos os campos na sincronização)
 
@@ -80,7 +80,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Acessibilidade: `SemanticProperties`, contraste AA, fonte dinâmica, alvos de toque ≥ 48dp, status da água não depender só de cor
 - [ ] App Cidadão: linguagem simples ("Água própria para consumo"), explicação de cada parâmetro, data da última coleta em destaque
 - [ ] App Técnico: fluxo de coleta em poucos toques, indicador claro de pendências de sincronização
-- [ ] Decisão do SAAE sobre M-06: aceitar pH/turbidez fora da faixa como alerta, não como erro
+- [x] M-06: leitura fora da faixa é registrada como alerta, com confirmação; só valores fisicamente impossíveis são recusados (regra 4 do CLAUDE.md; PR `fix/coleta-regras`). Pendente com o SAAE: confirmar no texto da Portaria 888 o limite de pH (9,0 recomendado vs. 9,5 atual) e o recomendado de cloro (≤ 2,0)
 
 ## Fase 5 — Observabilidade e lançamento
 
