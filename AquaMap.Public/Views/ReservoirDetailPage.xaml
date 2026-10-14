@@ -24,7 +24,7 @@
                     <DataTemplate x:DataType="models:WaterAnalysis">
                         <Border StrokeShape="RoundRectangle 16" Margin="0,0,0,16" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Stroke="Transparent" Padding="16">
                             <VerticalStackLayout Spacing="12">
-                                <Label Text="{Binding AnalysisDate, StringFormat='Data da Coleta: {0:dd/MM/yyyy HH:mm}'}" FontSize="12" TextColor="#64748B" FontAttributes="Bold" />
+                                <Label Text="{Binding AnalysisDateLocal, StringFormat='Data da Coleta: {0:dd/MM/yyyy HH:mm}'}" FontSize="12" TextColor="#64748B" FontAttributes="Bold" />
                                 
                                 <Grid ColumnDefinitions="*,*">
                                     <VerticalStackLayout Grid.Column="0" Spacing="4">

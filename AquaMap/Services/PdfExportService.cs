@@ -109,7 +109,7 @@ namespace AquaMap.Services
                         var rowBorder = item.IsPotable ? QColors.Green.Lighten3 : QColors.Red.Lighten3;
 
                         table.Cell().BorderBottom(1).BorderColor(QColors.Grey.Lighten2).PaddingVertical(4)
-                             .Text($"{item.AnalysisDate:dd/MM/yy HH:mm}");
+                             .Text($"{item.AnalysisDateLocal:dd/MM/yy HH:mm}");
                         table.Cell().BorderBottom(1).BorderColor(QColors.Grey.Lighten2).PaddingVertical(4)
                              .Text($"{item.ResidualChlorine:F2}");
                         table.Cell().BorderBottom(1).BorderColor(QColors.Grey.Lighten2).PaddingVertical(4)

@@ -45,6 +45,7 @@ namespace AquaMap.Views
         private void LoadMapPicker()
         {
             // Centro em Alegre/ES — ajuste conforme necessário
+            // Doubles go into JavaScript: always format with InvariantCulture (pt-BR would emit "-20,7636").
             const double centerLat = -20.7636;
             const double centerLng = -41.5333;
 
@@ -72,7 +73,7 @@ namespace AquaMap.Views
     <div id='map'></div>
     <script>
         var marker = null;
-        var map = L.map('map', {{ zoomControl: true }}).setView([{centerLat}, {centerLng}], 14);
+        var map = L.map('map', {{ zoomControl: true }}).setView([{centerLat.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {centerLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}], 14);
 
         L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,

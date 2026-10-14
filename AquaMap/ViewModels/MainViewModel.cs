@@ -131,16 +131,7 @@ namespace AquaMap.ViewModels
                         var localAnalyses = await _localDbService.GetAnalysisHistoryAsync(r.Id).ConfigureAwait(false);
                         if (localAnalyses != null && localAnalyses.Count > 0)
                         {
-                            r.WaterAnalyses = localAnalyses.Select(a => new WaterAnalysis
-                            {
-                                Id = a.Id,
-                                AnalysisDate = a.AnalysisDate,
-                                ResidualChlorine = a.ResidualChlorine,
-                                Ph = a.Ph,
-                                Turbidity = a.Turbidity,
-                                EColiAbsent = a.EColiAbsent,
-                                ReservoirId = a.ReservoirId
-                            }).ToList();
+                            r.WaterAnalyses = localAnalyses.Select(a => a.ToDomain()).ToList();
                         }
                     }
 
@@ -173,17 +164,7 @@ namespace AquaMap.ViewModels
                         {
                             if (r.WaterAnalyses != null && r.WaterAnalyses.Count > 0)
                             {
-                                var localAnalyses = r.WaterAnalyses.Select(a => new Models.LocalWaterAnalysis
-                                {
-                                    Id = a.Id,
-                                    AnalysisDate = a.AnalysisDate,
-                                    ResidualChlorine = a.ResidualChlorine,
-                                    Ph = a.Ph,
-                                    Turbidity = a.Turbidity,
-                                    EColiAbsent = a.EColiAbsent,
-                                    ReservoirId = a.ReservoirId,
-                                    IsPendingSync = false
-                                }).ToList();
+                                var localAnalyses = r.WaterAnalyses.Select(a => Models.LocalWaterAnalysis.FromDomain(a)).ToList();
 
                                 await _localDbService.SaveAnalysisHistoryAsync(r.Id, localAnalyses).ConfigureAwait(false);
                             }

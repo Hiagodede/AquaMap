@@ -6,6 +6,12 @@ namespace AquaMap.Domain.Entities
     {
         public int Id { get; set; }
         public DateTime AnalysisDate { get; set; } = DateTime.UtcNow;
+
+        // AnalysisDate is always UTC (an Unspecified kind comes from SQLite or JSON without "Z").
+        // Use this for display, so a 09:00 collection in Alegre-ES is not shown as 12:00.
+        [System.Text.Json.Serialization.JsonIgnore]
+        public DateTime AnalysisDateLocal =>
+            (AnalysisDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(AnalysisDate, DateTimeKind.Utc) : AnalysisDate).ToLocalTime();
         public bool IsPendingSync { get; set; } = false;
 
         // Parâmetros avaliados (Portaria 888/2021)
