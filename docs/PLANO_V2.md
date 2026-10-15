@@ -101,6 +101,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 _Agentes: anotem aqui ideias de features novas em vez de implementá-las._
 
 - **Coletas pendentes visíveis no formulário (técnico).** Uma coleta recusada pelo servidor (400/422) só é descartada e mostrada ao técnico no próximo envio pelo formulário; nas passadas automáticas ela continua na fila, aparece como pendente no histórico e entra na cor do reservatório. Mostrar a quantidade de pendentes no formulário fecharia essa lacuna.
+- **WebViews dos mapas: teste e bloqueio por padrão.** O escape do popup (QA EST-03/CID-01) não tem teste automatizado porque o HTML é montado dentro da página MAUI. Extrair a montagem para um método puro e testar um nome com `</script><img onerror=...>`. Os handlers de `Navigating` também deveriam cancelar todo esquema que não seja o documento inicial (hoje só tratam `aquamap://` e http(s)).
 
 ## Decisões registradas
 

@@ -223,13 +223,26 @@ namespace AquaMap.Public.Views
                     // External links (e.g. "Leaflet" in the attribution) replaced the map inside the app and
                     // "back" then closed it (QA CID-02). Open them in the system browser instead.
                     e.Cancel = true;
-                    await Launcher.Default.OpenAsync(new Uri(e.Url));
+                    await OpenInBrowserAsync(e.Url);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
                 await SafeAlertAsync("Erro", "Não foi possível abrir os detalhes do reservatório.");
+            }
+        }
+
+        private async Task OpenInBrowserAsync(string url)
+        {
+            try
+            {
+                await Launcher.Default.OpenAsync(new Uri(url));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao abrir link externo: {ex}");
+                await SafeAlertAsync("Erro", "Não foi possível abrir o link.");
             }
         }
 
