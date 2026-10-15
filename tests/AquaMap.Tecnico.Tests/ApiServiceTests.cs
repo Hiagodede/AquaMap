@@ -64,6 +64,23 @@ public class ApiServiceTests
         Assert.Equal("Ferro deve estar entre 0 e 100 mg/L.", result.ErrorMessage);
     }
 
+    // The offline queue decision: a wrong answer here deletes field measurements or blocks them forever.
+    [Theory]
+    [InlineData(true, 201, SubmitOutcome.Accepted)]
+    [InlineData(false, 401, SubmitOutcome.SessionExpired)]
+    [InlineData(false, 403, SubmitOutcome.SessionExpired)]
+    [InlineData(false, 400, SubmitOutcome.Rejected)]
+    [InlineData(false, 422, SubmitOutcome.Rejected)]
+    [InlineData(false, null, SubmitOutcome.RetryLater)]   // no network
+    [InlineData(false, 500, SubmitOutcome.RetryLater)]
+    [InlineData(false, 502, SubmitOutcome.RetryLater)]    // Render cold start
+    [InlineData(false, 503, SubmitOutcome.RetryLater)]
+    [InlineData(false, 404, SubmitOutcome.RetryLater)]
+    public void Submit_outcome_drives_the_offline_queue(bool success, int? status, SubmitOutcome expected)
+    {
+        Assert.Equal(expected, new ApiResult(success, status, null).Outcome);
+    }
+
     [Fact]
     public async Task Collection_network_failure_has_no_status_code()
     {

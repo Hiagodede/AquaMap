@@ -59,11 +59,20 @@ namespace AquaMap.Services
             }
         }
 
-        public async Task<SyncReport> SyncPendingAnalysisAsync()
+        /// <param name="interactive">
+        /// True when called from the collection form, which shows the report to the technician: it waits for a
+        /// running pass (so the collection just saved is included) and discards server-rejected collections.
+        /// Background passes (startup, network back) skip if busy and keep rejected collections queued,
+        /// because nobody would see the warning and a field measurement must never vanish silently.
+        /// </param>
+        public async Task<SyncReport> SyncPendingAnalysisAsync(bool interactive = false)
         {
             var rejected = new List<string>();
             if (Connectivity.NetworkAccess != NetworkAccess.Internet) return new SyncReport(rejected, false);
-            if (!await _syncLock.WaitAsync(0).ConfigureAwait(false)) return new SyncReport(rejected, false);
+            if (interactive)
+                await _syncLock.WaitAsync().ConfigureAwait(false);
+            else if (!await _syncLock.WaitAsync(0).ConfigureAwait(false))
+                return new SyncReport(rejected, false);
 
             try
             {
@@ -89,30 +98,30 @@ namespace AquaMap.Services
                     domainAnalysis.IsPendingSync = false;
 
                     var result = await _apiService.SubmitWaterAnalysisAsync(domainAnalysis, token).ConfigureAwait(false);
-                    if (result.Success)
+                    switch (result.Outcome)
                     {
-                        localAnalysis.IsPendingSync = false;
-                        await _localDbService.SaveAnalysisAsync(localAnalysis).ConfigureAwait(false);
-                        Debug.WriteLine($"[SyncService] Análise local {localAnalysis.LocalId} enviada com sucesso!");
-                    }
-                    else if (result.StatusCode is 401 or 403)
-                    {
-                        // Token expired or revoked: keep everything queued until the technician logs in again.
-                        Debug.WriteLine("[SyncService] Sessão expirada; coletas continuam pendentes.");
-                        return new SyncReport(rejected, true);
-                    }
-                    else if (result.StatusCode is 400 or 422)
-                    {
-                        // The server will never accept it: retrying forever blocked the queue and made every
-                        // later success message say "sincronização em andamento". Drop it and tell the technician.
-                        await _localDbService.DeleteAnalysisAsync(localAnalysis).ConfigureAwait(false);
-                        rejected.Add($"{localAnalysis.ToDomain().AnalysisDateLocal:dd/MM HH:mm}: {result.ErrorMessage ?? "dados inválidos"}");
-                        Debug.WriteLine($"[SyncService] Análise local {localAnalysis.LocalId} recusada pelo servidor: {result.ErrorMessage}");
-                    }
-                    else
-                    {
-                        // Network failure or server error: stays pending for the next attempt.
-                        Debug.WriteLine($"[SyncService] Falha transitória ao enviar análise local {localAnalysis.LocalId} (HTTP {result.StatusCode}).");
+                        case SubmitOutcome.Accepted:
+                            localAnalysis.IsPendingSync = false;
+                            await _localDbService.SaveAnalysisAsync(localAnalysis).ConfigureAwait(false);
+                            Debug.WriteLine($"[SyncService] Análise local {localAnalysis.LocalId} enviada com sucesso!");
+                            break;
+
+                        case SubmitOutcome.SessionExpired:
+                            Debug.WriteLine("[SyncService] Sessão expirada; coletas continuam pendentes.");
+                            return new SyncReport(rejected, true);
+
+                        case SubmitOutcome.Rejected when interactive:
+                            // Retrying forever never succeeds and made every later success message lie. Discard it,
+                            // but only here, where the technician sees the reservoir and values to record it again.
+                            await _localDbService.DeleteAnalysisAsync(localAnalysis).ConfigureAwait(false);
+                            rejected.Add(await DescribeRejectedAsync(localAnalysis, result.ErrorMessage).ConfigureAwait(false));
+                            Debug.WriteLine($"[SyncService] Análise local {localAnalysis.LocalId} recusada e descartada: {result.ErrorMessage}");
+                            break;
+
+                        default:
+                            // Rejected in a background pass, or a transient failure: stays queued.
+                            Debug.WriteLine($"[SyncService] Análise local {localAnalysis.LocalId} continua pendente ({result.Outcome}, HTTP {result.StatusCode}).");
+                            break;
                     }
                 }
 
@@ -127,6 +136,28 @@ namespace AquaMap.Services
             {
                 _syncLock.Release();
             }
+        }
+
+        // Everything the technician needs to record the collection again once it is discarded.
+        private async Task<string> DescribeRejectedAsync(LocalWaterAnalysis a, string? reason)
+        {
+            string reservoir = $"reservatório #{a.ReservoirId}";
+            try
+            {
+                var cached = await _localDbService.GetReservoirsAsync().ConfigureAwait(false);
+                var name = cached?.FirstOrDefault(r => r.Id == a.ReservoirId)?.Name;
+                if (!string.IsNullOrWhiteSpace(name)) reservoir = name.Trim();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SyncService] Erro ao buscar nome do reservatório: {ex}");
+            }
+
+            var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+            return string.Format(pt,
+                "{0} em {1:dd/MM HH:mm} (cloro {2}, pH {3}, turbidez {4}, ferro {5}, E. coli {6}): {7}",
+                reservoir, a.ToDomain().AnalysisDateLocal, a.ResidualChlorine, a.Ph, a.Turbidity, a.Iron,
+                a.EColiAbsent ? "ausente" : "presente", reason ?? "dados inválidos");
         }
     }
 }

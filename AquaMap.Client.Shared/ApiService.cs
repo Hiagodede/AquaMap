@@ -266,7 +266,29 @@ public class ApiService
 }
 
 /// <summary>Resultado de uma chamada que altera dados. StatusCode null = falha de rede/timeout.</summary>
-public record ApiResult(bool Success, int? StatusCode, string? ErrorMessage);
+public record ApiResult(bool Success, int? StatusCode, string? ErrorMessage)
+{
+    /// <summary>What the offline queue should do with a collection after this answer.</summary>
+    public SubmitOutcome Outcome => this switch
+    {
+        { Success: true } => SubmitOutcome.Accepted,
+        { StatusCode: 401 or 403 } => SubmitOutcome.SessionExpired,
+        { StatusCode: 400 or 422 } => SubmitOutcome.Rejected,
+        _ => SubmitOutcome.RetryLater // no network (null), timeout, 5xx/cold start, anything else
+    };
+}
+
+public enum SubmitOutcome
+{
+    /// <summary>Stored by the server: mark as synced.</summary>
+    Accepted,
+    /// <summary>Token expired or revoked: keep queued until the technician logs in again.</summary>
+    SessionExpired,
+    /// <summary>The server will never accept it (invalid data): retrying forever blocks nothing but never succeeds.</summary>
+    Rejected,
+    /// <summary>Transient failure: keep queued and try again later.</summary>
+    RetryLater
+}
 
 public class LoginResponse
 {

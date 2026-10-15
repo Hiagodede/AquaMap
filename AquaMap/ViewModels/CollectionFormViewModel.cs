@@ -720,7 +720,7 @@ namespace AquaMap.ViewModels
 
                 if (online)
                 {
-                    report = await _syncService.SyncPendingAnalysisAsync();
+                    report = await _syncService.SyncPendingAnalysisAsync(interactive: true);
                     // The message reflects this collection, not the state of the whole queue.
                     sent = await _localDbService.IsAnalysisSyncedAsync(localAnalysis.LocalId);
                 }
@@ -784,7 +784,7 @@ namespace AquaMap.ViewModels
                 {
                     IsSuccess = false;
                     StatusColor = "Red";
-                    StatusMessage += "\n\nColetas antigas recusadas pelo servidor e descartadas (registre de novo com os valores corretos):\n• "
+                    StatusMessage += "\n\nColetas recusadas pelo servidor e removidas do aparelho. Registre de novo, corrigindo os valores:\n• "
                         + string.Join("\n• ", report.Rejected);
                 }
             }

@@ -229,6 +229,7 @@ namespace AquaMap.ViewModels
         }
 
         private bool _initialized;
+        private bool _loadFailed;
 
         // Runs once per page instance: OnAppearing fires again after dialogs, child pages and tab switches,
         // and reloading then overwrote unsaved edits (neighborhoods were unchecked).
@@ -362,6 +363,7 @@ namespace AquaMap.ViewModels
                 var res = await _apiService.GetReservoirByIdAsync(ReservoirId);
                 if (res == null)
                 {
+                    _loadFailed = true;
                     StatusMessage = "Não foi possível carregar os dados do reservatório. Verifique a conexão e abra a edição de novo.";
                 }
                 else
@@ -387,6 +389,8 @@ namespace AquaMap.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao carregar reservatório: {ex.Message}");
+                _loadFailed = true;
+                StatusMessage = "Não foi possível carregar os dados do reservatório. Verifique a conexão e abra a edição de novo.";
             }
             finally
             {
@@ -398,6 +402,13 @@ namespace AquaMap.ViewModels
         private async Task SaveAsync()
         {
             if (IsBusy) return;
+
+            // Saving an edit whose data never loaded would send empty neighborhoods and erase them on the server.
+            if (_loadFailed)
+            {
+                StatusMessage = "Os dados do reservatório não foram carregados. Volte e abra a edição de novo.";
+                return;
+            }
 
             if (string.IsNullOrWhiteSpace(ReservoirName))
             {

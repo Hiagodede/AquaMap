@@ -7,6 +7,7 @@ namespace AquaMap
         // A "back" (pop) requested while another navigation is still running can leave the Shell content
         // blank or black on Android until the app restarts (QA INS-07: two quick taps on back, or back right
         // after saving). Such pops are ignored. The guard expires so it can never block navigation for good.
+        // Note: a programmatic GoToAsync("..") issued within 1 s of another navigation is ignored the same way.
         private static readonly TimeSpan NavigationGuardWindow = TimeSpan.FromSeconds(1);
         private readonly Stopwatch _sinceNavigationStarted = new();
         private bool _isNavigating;
