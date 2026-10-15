@@ -100,6 +100,8 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 
 _Agentes: anotem aqui ideias de features novas em vez de implementá-las._
 
+- **Coletas pendentes visíveis no formulário (técnico).** Uma coleta recusada pelo servidor (400/422) só é descartada e mostrada ao técnico no próximo envio pelo formulário; nas passadas automáticas ela continua na fila, aparece como pendente no histórico e entra na cor do reservatório. Mostrar a quantidade de pendentes no formulário fecharia essa lacuna.
+
 ## Decisões registradas
 
 | Data | Decisão |

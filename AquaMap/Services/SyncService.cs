@@ -23,6 +23,7 @@ namespace AquaMap.Services
         private readonly LocalDatabaseService _localDbService;
         // Startup, connectivity changes and the collection form can all trigger a sync at once.
         private readonly SemaphoreSlim _syncLock = new(1, 1);
+        private static readonly TimeSpan InteractiveLockWait = TimeSpan.FromSeconds(30);
 
         public SyncService(ApiService apiService, LocalDatabaseService localDbService)
         {
@@ -69,9 +70,10 @@ namespace AquaMap.Services
         {
             var rejected = new List<string>();
             if (Connectivity.NetworkAccess != NetworkAccess.Internet) return new SyncReport(rejected, false);
-            if (interactive)
-                await _syncLock.WaitAsync().ConfigureAwait(false);
-            else if (!await _syncLock.WaitAsync(0).ConfigureAwait(false))
+            // A background pass stuck on a slow API (100 s HTTP timeout per collection) must not keep the form
+            // busy for minutes: after the wait the collection stays saved on the device and is retried later.
+            var wait = interactive ? InteractiveLockWait : TimeSpan.Zero;
+            if (!await _syncLock.WaitAsync(wait).ConfigureAwait(false))
                 return new SyncReport(rejected, false);
 
             try
