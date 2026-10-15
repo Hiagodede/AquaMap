@@ -406,6 +406,7 @@ namespace AquaMap.ViewModels
             // Saving an edit whose data never loaded would send empty neighborhoods and erase them on the server.
             if (_loadFailed)
             {
+                IsSuccess = false;
                 StatusMessage = "Os dados do reservatório não foram carregados. Volte e abra a edição de novo.";
                 return;
             }
