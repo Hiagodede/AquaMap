@@ -144,6 +144,25 @@ namespace AquaMap.Views
                     _viewModel.SetLocationFromMap(lat, lng);
                 }
             }
+            else if (e.Url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                     e.Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                // External links (e.g. "Leaflet" in the attribution) must not replace the map picker inside the app.
+                e.Cancel = true;
+                _ = OpenInBrowserAsync(e.Url);
+            }
+        }
+
+        private static async Task OpenInBrowserAsync(string url)
+        {
+            try
+            {
+                await Launcher.Default.OpenAsync(new Uri(url));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao abrir link externo: {ex}");
+            }
         }
     }
 }
