@@ -45,16 +45,19 @@ namespace AquaMap.Public.ViewModels
             ErrorMessage = string.Empty;
             try
             {
-                // ApiService devolve lista vazia em caso de falha (rede, timeout, erro HTTP)
+                // null = request failed (network, timeout, HTTP error); an empty list is a valid answer.
                 var data = await _apiService.GetReservoirsAsync();
+                if (data == null)
+                {
+                    ErrorMessage = "Não foi possível carregar os reservatórios. Verifique sua conexão com a internet e tente novamente.";
+                    return;
+                }
+
                 Reservoirs.Clear();
                 foreach (var r in data)
                 {
                     Reservoirs.Add(r);
                 }
-
-                if (Reservoirs.Count == 0)
-                    ErrorMessage = "Não foi possível carregar os reservatórios. Verifique sua conexão com a internet e tente novamente.";
             }
             catch (Exception ex)
             {

@@ -228,8 +228,15 @@ namespace AquaMap.ViewModels
             });
         }
 
+        private bool _initialized;
+
+        // Runs once per page instance: OnAppearing fires again after dialogs, child pages and tab switches,
+        // and reloading then overwrote unsaved edits (neighborhoods were unchecked).
         public void InitializeForm()
         {
+            if (_initialized) return;
+            _initialized = true;
+
             if (IsEditing)
             {
                 _ = LoadReservoirDataAsync();
@@ -352,9 +359,12 @@ namespace AquaMap.ViewModels
             IsBusy = true;
             try
             {
-                var reservoirs = await _apiService.GetReservoirsAsync();
-                var res = reservoirs.FirstOrDefault(r => r.Id == ReservoirId);
-                if (res != null)
+                var res = await _apiService.GetReservoirByIdAsync(ReservoirId);
+                if (res == null)
+                {
+                    StatusMessage = "Não foi possível carregar os dados do reservatório. Verifique a conexão e abra a edição de novo.";
+                }
+                else
                 {
                     // Coordenadas
                     _latitude = res.Latitude;

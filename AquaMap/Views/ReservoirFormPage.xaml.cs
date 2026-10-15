@@ -20,6 +20,10 @@ namespace AquaMap.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
+            // Re-subscribe: OnDisappearing unsubscribes, and without this "Marcar no mapa" never
+            // loaded the map after the page reappeared (QA INS-11).
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.InitializeForm();
         }
 

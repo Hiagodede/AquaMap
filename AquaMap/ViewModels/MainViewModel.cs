@@ -113,8 +113,9 @@ namespace AquaMap.ViewModels
 
             try
             {
+                // No ConfigureAwait(false) here: Points/Reservoirs are bound to the UI and must change on the main thread.
                 // 1. Carrega do banco de dados local primeiro (Offline-First)
-                var cached = await _localDbService.GetReservoirsAsync().ConfigureAwait(false);
+                var cached = await _localDbService.GetReservoirsAsync();
                 if (cached != null && cached.Count > 0)
                 {
                     var mappedPoints = cached.Select(c => new Reservoir
@@ -128,7 +129,7 @@ namespace AquaMap.ViewModels
                     // Carrega as análises do banco local para computar o StatusColor
                     foreach (var r in mappedPoints)
                     {
-                        var localAnalyses = await _localDbService.GetAnalysisHistoryAsync(r.Id).ConfigureAwait(false);
+                        var localAnalyses = await _localDbService.GetAnalysisHistoryAsync(r.Id);
                         if (localAnalyses != null && localAnalyses.Count > 0)
                         {
                             r.WaterAnalyses = localAnalyses.Select(a => a.ToDomain()).ToList();
@@ -142,7 +143,7 @@ namespace AquaMap.ViewModels
                 // 2. Se houver rede, busca na API de forma transparente para atualizar o cache local e a tela
                 if (Connectivity.NetworkAccess == NetworkAccess.Internet)
                 {
-                    var data = await _apiService.GetReservoirsAsync().ConfigureAwait(false);
+                    var data = await _apiService.GetReservoirsAsync();
                     if (data != null)
                     {
                         _allPoints = data;
@@ -157,7 +158,7 @@ namespace AquaMap.ViewModels
                             Longitude = r.Longitude
                         }).ToList();
 
-                        await _localDbService.SaveReservoirsAsync(localReservoirs).ConfigureAwait(false);
+                        await _localDbService.SaveReservoirsAsync(localReservoirs);
 
                         // Cacheia o histórico de análises de cada um deles localmente
                         foreach (var r in data)
@@ -166,7 +167,7 @@ namespace AquaMap.ViewModels
                             {
                                 var localAnalyses = r.WaterAnalyses.Select(a => Models.LocalWaterAnalysis.FromDomain(a)).ToList();
 
-                                await _localDbService.SaveAnalysisHistoryAsync(r.Id, localAnalyses).ConfigureAwait(false);
+                                await _localDbService.SaveAnalysisHistoryAsync(r.Id, localAnalyses);
                             }
                         }
                     }

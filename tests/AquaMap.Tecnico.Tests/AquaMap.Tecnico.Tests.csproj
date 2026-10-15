@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\AquaMap\Models\LocalEntities.cs" Link="Linked\LocalEntities.cs" />
+    <Compile Include="..\..\AquaMap.Client.Shared\ApiService.cs" Link="Linked\ApiService.cs" />
   </ItemGroup>
 
   <ItemGroup>

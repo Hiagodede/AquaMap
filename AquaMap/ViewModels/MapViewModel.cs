@@ -44,6 +44,7 @@ namespace AquaMap.ViewModels
             try
             {
                 var data = await _apiService.GetReservoirsAsync();
+                if (data == null) return; // request failed: keep the pins already on the map
 
                 MapPins.Clear();
                 NativePins.Clear();

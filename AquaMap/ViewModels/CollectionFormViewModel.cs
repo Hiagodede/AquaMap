@@ -531,7 +531,7 @@ namespace AquaMap.ViewModels
             try
             {
                 // 1. Carrega do banco de dados local primeiro (Offline-First)
-                var cached = await _localDbService.GetReservoirsAsync().ConfigureAwait(false);
+                var cached = await _localDbService.GetReservoirsAsync();
                 if (cached != null && cached.Count > 0)
                 {
                     var mappedPoints = cached.Select(c => new Reservoir
@@ -559,7 +559,7 @@ namespace AquaMap.ViewModels
                 // 2. Se houver rede, busca na API de forma transparente para atualizar o cache local e a lista
                 if (Connectivity.NetworkAccess == NetworkAccess.Internet)
                 {
-                    var data = await _apiService.GetReservoirsAsync().ConfigureAwait(false);
+                    var data = await _apiService.GetReservoirsAsync();
                     if (data != null)
                     {
                         Reservoirs.Clear();
@@ -584,7 +584,7 @@ namespace AquaMap.ViewModels
                             Longitude = r.Longitude
                         }).ToList();
 
-                        await _localDbService.SaveReservoirsAsync(localReservoirs).ConfigureAwait(false);
+                        await _localDbService.SaveReservoirsAsync(localReservoirs);
                     }
                 }
             }
@@ -652,17 +652,28 @@ namespace AquaMap.ViewModels
 
             var reading = input.Analysis!;
 
-            IsBusy = true;
-            StatusMessage = string.Empty;
-
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
+            // Checked before IsBusy: LogoutAsync is a no-op while busy, which used to leave the form
+            // stuck "busy" forever instead of returning to the login screen.
+            string? token;
+            try
+            {
+                token = await SecureStorage.Default.GetAsync("jwt_token");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao ler token: {ex}");
+                token = null;
+            }
             if (string.IsNullOrEmpty(token))
             {
-                StatusMessage = "Sessão expirada. Faça login novamente.";
                 IsSuccess = false;
+                StatusMessage = "Sessão expirada. Faça login novamente.";
                 await LogoutAsync();
                 return;
             }
+
+            IsBusy = true;
+            StatusMessage = string.Empty;
 
             try
             {
@@ -676,6 +687,14 @@ namespace AquaMap.ViewModels
                         finalLat = l1;
                         finalLng = l2;
                     }
+                }
+
+                // Same ranges the API enforces: otherwise the collection would be saved, then rejected on sync.
+                if (finalLat is < -90 or > 90 || finalLng is < -180 or > 180)
+                {
+                    IsSuccess = false;
+                    StatusMessage = "Coordenadas inválidas: a latitude deve estar entre -90 e 90 e a longitude entre -180 e 180.";
+                    return;
                 }
 
                 // Criar entidade local do banco de dados SQLite com IsPendingSync = true
@@ -696,12 +715,14 @@ namespace AquaMap.ViewModels
                 await _localDbService.SaveAnalysisAsync(localAnalysis);
 
                 bool online = Connectivity.NetworkAccess == NetworkAccess.Internet;
-                bool syncSuccess = false;
+                SyncReport? report = null;
+                bool sent = false;
 
                 if (online)
                 {
-                    // Tenta sincronizar imediatamente em segundo plano
-                    syncSuccess = await _syncService.SyncPendingAnalysisAsync();
+                    report = await _syncService.SyncPendingAnalysisAsync();
+                    // The message reflects this collection, not the state of the whole queue.
+                    sent = await _localDbService.IsAnalysisSyncedAsync(localAnalysis.LocalId);
                 }
 
                 // Limpar campos e rascunho
@@ -744,15 +765,27 @@ namespace AquaMap.ViewModels
                 IsSuccess = true;
                 StatusColor = "Green";
                 try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }
-                if (syncSuccess)
+                if (sent)
                 {
                     StatusMessage = "Coleta registrada e enviada com sucesso!";
                 }
+                else if (report?.SessionExpired == true)
+                {
+                    StatusMessage = "Coleta salva no aparelho. Sua sessão expirou: saia e entre de novo para enviá-la.";
+                }
                 else
                 {
-                    StatusMessage = online 
-                        ? "Coleta registrada localmente! Sincronização em andamento..." 
+                    StatusMessage = online
+                        ? "Coleta salva no aparelho. O envio será tentado de novo automaticamente."
                         : "Coleta registrada com sucesso! (Salva offline)";
+                }
+
+                if (report is { Rejected.Count: > 0 })
+                {
+                    IsSuccess = false;
+                    StatusColor = "Red";
+                    StatusMessage += "\n\nColetas antigas recusadas pelo servidor e descartadas (registre de novo com os valores corretos):\n• "
+                        + string.Join("\n• ", report.Rejected);
                 }
             }
             catch (Exception ex)
