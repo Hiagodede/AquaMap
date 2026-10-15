@@ -64,8 +64,8 @@ namespace AquaMap.ViewModels
                         {
                             ReservoirId = reservoir.Id,
                             Label = reservoir.Name,
-                            // "Gray" = no analysis yet: must not read as "Imprópria" (false alarm).
-                            Address = "Última Situação: " + reservoir.StatusColor switch { "Green" => "Própria", "Red" => "Imprópria", _ => "Sem análise" },
+                            // "Gray" = no analysis yet: must not read as "Imprópria" (false alarm). Same text as the legend.
+                            Address = "Última Situação: " + reservoir.StatusColor switch { "Green" => "Própria", "Red" => "Imprópria", _ => "Sem dados" },
                             Type = Microsoft.Maui.Controls.Maps.PinType.Place,
                             Location = new Location(reservoir.Latitude, reservoir.Longitude),
                             PinColor = pinColor

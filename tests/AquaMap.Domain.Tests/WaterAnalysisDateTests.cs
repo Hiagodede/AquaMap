@@ -22,6 +22,7 @@ public class WaterAnalysisDateTests
         var a = new WaterAnalysis { AnalysisDate = DateTime.SpecifyKind(UtcNoon, DateTimeKind.Unspecified) };
 
         Assert.Equal(UtcNoon.ToLocalTime(), a.AnalysisDateLocal);
+        Assert.Equal(DateTimeKind.Local, a.AnalysisDateLocal.Kind);
     }
 
     [Fact]
