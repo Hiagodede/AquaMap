@@ -18,16 +18,36 @@ public class CoordinateInputTests
         Assert.Equal(-41.54, result.Longitude, 6);
     }
 
-    [Fact]
-    public void Gps_value_keeps_its_full_precision()
+    // GPS/map values are written with at most 6 decimals: they fit the field (MaxLength 12) and the text the
+    // technician sees parses back to exactly the value that is saved.
+    [Theory]
+    [InlineData(-20.763612345, "-20.763612")]
+    [InlineData(-41.5333, "-41.5333")]
+    [InlineData(-180.0, "-180")]
+    [InlineData(-179.9999999, "-180")]
+    public void Format_writes_what_the_field_shows_and_saves(double value, string expected)
     {
-        var result = CoordinateInput.Parse(
-            (-20.763612345).ToString(CultureInfo.InvariantCulture),
-            (-41.533398765).ToString(CultureInfo.InvariantCulture));
+        string text = CoordinateInput.Format(value);
 
-        Assert.Equal(CoordinateInputStatus.Valid, result.Status);
-        Assert.Equal(-20.763612345, result.Latitude);
-        Assert.Equal(-41.533398765, result.Longitude);
+        Assert.Equal(expected, text);
+        Assert.True(text.Length <= 12);
+        Assert.Equal(text, CoordinateInput.Sanitize(text));
+        Assert.Equal(double.Parse(text, CultureInfo.InvariantCulture), CoordinateInput.Parse("0", text).Longitude);
+    }
+
+    [Fact]
+    public void Format_ignores_the_device_culture()
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
+            Assert.Equal("-20.7636", CoordinateInput.Format(-20.7636));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
     }
 
     [Theory]

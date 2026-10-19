@@ -31,6 +31,12 @@ namespace AquaMap.Helpers
         }
 
         /// <summary>
+        /// Text that GPS, the map picker and an edit write into the fields: at most 6 decimals (~10 cm), so it fits
+        /// the field and what the technician sees is exactly what is saved.
+        /// </summary>
+        public static string Format(double value) => value.ToString("0.######", CultureInfo.InvariantCulture);
+
+        /// <summary>
         /// Empty when both fields are blank; Invalid when only one is filled, a value does not parse, or it is
         /// outside the ranges the API enforces (latitude -90..90, longitude -180..180).
         /// </summary>

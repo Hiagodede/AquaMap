@@ -105,6 +105,7 @@ namespace AquaMap.ViewModels
                 OnPropertyChanged();
                 _isFormattingCoord = false;
                 SaveDraft();
+                RefreshLocationFromFields();
             }
         }
 
@@ -119,6 +120,7 @@ namespace AquaMap.ViewModels
                 OnPropertyChanged();
                 _isFormattingCoord = false;
                 SaveDraft();
+                RefreshLocationFromFields();
             }
         }
 
@@ -253,8 +255,8 @@ namespace AquaMap.ViewModels
         public void SetLocationFromMap(double lat, double lng)
         {
             _isFormattingCoord = true;
-            ReservoirLatitude = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            ReservoirLongitude = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            ReservoirLatitude = CoordinateInput.Format(lat);
+            ReservoirLongitude = CoordinateInput.Format(lng);
             _isFormattingCoord = false;
             OnPropertyChanged(nameof(ReservoirLatitude));
             OnPropertyChanged(nameof(ReservoirLongitude));
@@ -282,8 +284,8 @@ namespace AquaMap.ViewModels
                 if (location != null)
                 {
                     _isFormattingCoord = true;
-                    ReservoirLatitude = location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    ReservoirLongitude = location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    ReservoirLatitude = CoordinateInput.Format(location.Latitude);
+                    ReservoirLongitude = CoordinateInput.Format(location.Longitude);
                     _isFormattingCoord = false;
                     OnPropertyChanged(nameof(ReservoirLatitude));
                     OnPropertyChanged(nameof(ReservoirLongitude));
@@ -365,8 +367,8 @@ namespace AquaMap.ViewModels
                 {
                     // Coordenadas
                     _isFormattingCoord = true;
-                    ReservoirLatitude = res.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    ReservoirLongitude = res.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    ReservoirLatitude = CoordinateInput.Format(res.Latitude);
+                    ReservoirLongitude = CoordinateInput.Format(res.Longitude);
                     _isFormattingCoord = false;
                     OnPropertyChanged(nameof(ReservoirLatitude));
                     OnPropertyChanged(nameof(ReservoirLongitude));
@@ -505,6 +507,14 @@ namespace AquaMap.ViewModels
             {
                 IsBusy = false;
             }
+        }
+
+        // A manual edit after GPS/map must update the card: it shows what will be saved, or nothing.
+        private void RefreshLocationFromFields()
+        {
+            var coords = CoordinateInput.Parse(ReservoirLatitude, ReservoirLongitude);
+            LocationCaptured = coords.Status == CoordinateInputStatus.Valid;
+            LocationDisplay = LocationCaptured ? $"📍 {coords.Latitude:F5}, {coords.Longitude:F5}" : string.Empty;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
