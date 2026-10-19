@@ -36,7 +36,7 @@ namespace AquaMap
                 {
                     float hue = BitmapDescriptorFactory.HueRed; // Default
                     if (cp.PinColor == Colors.Green) hue = BitmapDescriptorFactory.HueGreen;
-                    else if (cp.PinColor == Colors.Gray) hue = BitmapDescriptorFactory.HueYellow;
+                    else if (cp.PinColor == Colors.Gray) hue = BitmapDescriptorFactory.HueOrange; // "Sem dados" in the legend
                     
                     // PlatformView no MapPinHandler do Android é do tipo MarkerOptions
                     var markerOptions = handler.PlatformView as MarkerOptions;

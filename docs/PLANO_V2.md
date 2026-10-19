@@ -43,6 +43,8 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [x] `tests/AquaMap.Domain.Tests` (xUnit): cobertura completa das faixas da Portaria 888, incluindo os limites (0,2 / 5,0 / 6,0 / 9,5 / 5,0 / 0,3) (PR `fix/coleta-regras`; ainda falta rodar no CI)
 - [ ] `tests/AquaMap.Api.Tests`: `WebApplicationFactory` + **Testcontainers (PostgreSQL real)**, cobrindo login, CRUD e as regras de autorização
 - [ ] Testes do `SyncService` / `LocalWaterAnalysis` (mapeamento de todos os campos na sincronização)
+  - [x] `LocalWaterAnalysis`: ida e volta cache ↔ domínio cobre todos os campos (`tests/AquaMap.Tecnico.Tests`, PR `fix/status-mapa`)
+  - [ ] `SyncService` (depende de abstrair `SecureStorage`/`Connectivity`)
 
 **CI e regras do repositório**
 - [ ] `ci.yml` no GitHub Actions: build da API + Domain + Infra, testes e build Android dos dois apps em todo PR para `v2`/`master`

@@ -141,20 +141,7 @@ namespace AquaMap.ViewModels
                 var cached = await _localDbService.GetAnalysisHistoryAsync(ReservoirId);
                 if (cached != null && cached.Count > 0)
                 {
-                    var mappedHistory = cached.Select(c => new WaterAnalysis
-                    {
-                        Id = c.Id,
-                        AnalysisDate = c.AnalysisDate,
-                        ResidualChlorine = c.ResidualChlorine,
-                        Ph = c.Ph,
-                        Turbidity = c.Turbidity,
-                        EColiAbsent = c.EColiAbsent,
-                        Iron = c.Iron,
-                        CollectionLatitude = c.CollectionLatitude,
-                        CollectionLongitude = c.CollectionLongitude,
-                        ReservoirId = c.ReservoirId,
-                        IsPendingSync = c.IsPendingSync
-                    }).ToList();
+                    var mappedHistory = cached.Select(c => c.ToDomain()).ToList();
 
                     AnalysisHistory.Clear();
                     WaterAnalysis? latest = null;
@@ -178,20 +165,7 @@ namespace AquaMap.ViewModels
                     if (data != null)
                     {
                         // Salva os dados baixados no banco de dados local
-                        var localList = data.Select(a => new Models.LocalWaterAnalysis
-                        {
-                            Id = a.Id,
-                            AnalysisDate = a.AnalysisDate,
-                            ResidualChlorine = a.ResidualChlorine,
-                            Ph = a.Ph,
-                            Turbidity = a.Turbidity,
-                            EColiAbsent = a.EColiAbsent,
-                            Iron = a.Iron,
-                            CollectionLatitude = a.CollectionLatitude,
-                            CollectionLongitude = a.CollectionLongitude,
-                            ReservoirId = a.ReservoirId,
-                            IsPendingSync = false
-                        }).ToList();
+                        var localList = data.Select(a => Models.LocalWaterAnalysis.FromDomain(a)).ToList();
 
                         await _localDbService.SaveAnalysisHistoryAsync(ReservoirId, localList);
 
@@ -203,20 +177,7 @@ namespace AquaMap.ViewModels
                             WaterAnalysis? latest = null;
                             foreach (var c in merged)
                             {
-                                var item = new WaterAnalysis
-                                {
-                                    Id = c.Id,
-                                    AnalysisDate = c.AnalysisDate,
-                                    ResidualChlorine = c.ResidualChlorine,
-                                    Ph = c.Ph,
-                                    Turbidity = c.Turbidity,
-                                    EColiAbsent = c.EColiAbsent,
-                                    Iron = c.Iron,
-                                    CollectionLatitude = c.CollectionLatitude,
-                                    CollectionLongitude = c.CollectionLongitude,
-                                    ReservoirId = c.ReservoirId,
-                                    IsPendingSync = c.IsPendingSync
-                                };
+                                var item = c.ToDomain();
                                 AnalysisHistory.Add(item);
                                 if (latest == null || item.AnalysisDate > latest.AnalysisDate)
                                 {

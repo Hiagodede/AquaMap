@@ -70,18 +70,9 @@ namespace AquaMap.Services
                 bool allSuccess = true;
                 foreach (var localAnalysis in pendingList)
                 {
-                    var domainAnalysis = new WaterAnalysis
-                    {
-                        ResidualChlorine = localAnalysis.ResidualChlorine,
-                        Ph = localAnalysis.Ph,
-                        Turbidity = localAnalysis.Turbidity,
-                        EColiAbsent = localAnalysis.EColiAbsent,
-                        Iron = localAnalysis.Iron,
-                        CollectionLatitude = localAnalysis.CollectionLatitude,
-                        CollectionLongitude = localAnalysis.CollectionLongitude,
-                        ReservoirId = localAnalysis.ReservoirId,
-                        AnalysisDate = localAnalysis.AnalysisDate
-                    };
+                    var domainAnalysis = localAnalysis.ToDomain();
+                    domainAnalysis.Id = 0; // the server assigns the id
+                    domainAnalysis.IsPendingSync = false;
 
                     bool success = await _apiService.SubmitWaterAnalysisAsync(domainAnalysis, token).ConfigureAwait(false);
                     if (success)

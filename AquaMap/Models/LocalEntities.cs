@@ -55,6 +55,39 @@ namespace AquaMap.Models
 
         [Ignore]
         public bool IsPotable => IsChlorineValid && IsPhValid && IsTurbidityValid && IsIronValid && EColiAbsent;
+
+        // Single mapping between the SQLite cache and the domain: every field must survive the
+        // round-trip (iron and the collection GPS were once dropped here, turning alerts green).
+        public static LocalWaterAnalysis FromDomain(WaterAnalysis a, bool isPendingSync = false) => new()
+        {
+            Id = a.Id,
+            AnalysisDate = a.AnalysisDate,
+            ResidualChlorine = a.ResidualChlorine,
+            Ph = a.Ph,
+            Turbidity = a.Turbidity,
+            EColiAbsent = a.EColiAbsent,
+            Iron = a.Iron,
+            CollectionLatitude = a.CollectionLatitude,
+            CollectionLongitude = a.CollectionLongitude,
+            ReservoirId = a.ReservoirId,
+            IsPendingSync = isPendingSync
+        };
+
+        public WaterAnalysis ToDomain() => new()
+        {
+            Id = Id,
+            // sqlite-net reads DateTime back as Unspecified; it is always stored in UTC.
+            AnalysisDate = DateTime.SpecifyKind(AnalysisDate, DateTimeKind.Utc),
+            ResidualChlorine = ResidualChlorine,
+            Ph = Ph,
+            Turbidity = Turbidity,
+            EColiAbsent = EColiAbsent,
+            Iron = Iron,
+            CollectionLatitude = CollectionLatitude,
+            CollectionLongitude = CollectionLongitude,
+            ReservoirId = ReservoirId,
+            IsPendingSync = IsPendingSync
+        };
     }
 
     public class LocalUser
