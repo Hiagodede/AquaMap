@@ -84,6 +84,21 @@ namespace AquaMap.Services
             }
         }
 
+        public async Task DeleteAnalysisAsync(LocalWaterAnalysis analysis)
+        {
+            await InitAsync().ConfigureAwait(false);
+            await _database!.DeleteAsync(analysis).ConfigureAwait(false);
+        }
+
+        // True only if the row still exists (not rejected and deleted) and was accepted by the server.
+        public async Task<bool> IsAnalysisSyncedAsync(int localId)
+        {
+            await InitAsync().ConfigureAwait(false);
+            return await _database!.Table<LocalWaterAnalysis>()
+                                    .Where(a => a.LocalId == localId && a.IsPendingSync == false)
+                                    .CountAsync().ConfigureAwait(false) > 0;
+        }
+
         public async Task SaveAnalysisHistoryAsync(int reservoirId, List<LocalWaterAnalysis> analysisList)
         {
             await InitAsync().ConfigureAwait(false);

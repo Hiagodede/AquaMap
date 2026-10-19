@@ -25,21 +25,22 @@ public class ApiService
         };
     }
 
-    public async Task<List<Reservoir>> GetReservoirsAsync()
+    // null = request failed (keep the cache); an empty list is a real "no reservoirs" answer.
+    public async Task<List<Reservoir>?> GetReservoirsAsync()
     {
         try
         {
             var response = await _httpClient.GetAsync("/reservoirs").ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<List<Reservoir>>(_jsonOptions).ConfigureAwait(false) ?? new List<Reservoir>();
+                return await response.Content.ReadFromJsonAsync<List<Reservoir>>(_jsonOptions).ConfigureAwait(false);
             }
-            return new List<Reservoir>();
+            return null;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erro ao buscar reservatórios: {ex.Message}");
-            return new List<Reservoir>();
+            return null;
         }
     }
 
@@ -80,7 +81,7 @@ public class ApiService
         }
     }
 
-    public async Task<bool> SubmitWaterAnalysisAsync(WaterAnalysis analysis, string token)
+    public async Task<ApiResult> SubmitWaterAnalysisAsync(WaterAnalysis analysis, string token)
     {
         try
         {
@@ -89,30 +90,31 @@ public class ApiService
             request.Content = JsonContent.Create(analysis);
 
             var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            return response.IsSuccessStatusCode;
+            return await ToResultAsync(response).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erro ao submeter análise: {ex.Message}");
-            return false;
+            return new ApiResult(false, null, null);
         }
     }
 
-    public async Task<List<WaterAnalysis>> GetWaterAnalysisHistoryAsync(int reservoirId)
+    // null = request failed (keep the cache); an empty list means no analyses yet.
+    public async Task<List<WaterAnalysis>?> GetWaterAnalysisHistoryAsync(int reservoirId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"/water-analysis/{reservoirId}").ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<List<WaterAnalysis>>(_jsonOptions).ConfigureAwait(false) ?? new List<WaterAnalysis>();
+                return await response.Content.ReadFromJsonAsync<List<WaterAnalysis>>(_jsonOptions).ConfigureAwait(false);
             }
-            return new List<WaterAnalysis>();
+            return null;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erro ao buscar histórico: {ex.Message}");
-            return new List<WaterAnalysis>();
+            return null;
         }
     }
 
@@ -264,7 +266,29 @@ public class ApiService
 }
 
 /// <summary>Resultado de uma chamada que altera dados. StatusCode null = falha de rede/timeout.</summary>
-public record ApiResult(bool Success, int? StatusCode, string? ErrorMessage);
+public record ApiResult(bool Success, int? StatusCode, string? ErrorMessage)
+{
+    /// <summary>What the offline queue should do with a collection after this answer.</summary>
+    public SubmitOutcome Outcome => this switch
+    {
+        { Success: true } => SubmitOutcome.Accepted,
+        { StatusCode: 401 or 403 } => SubmitOutcome.SessionExpired,
+        { StatusCode: 400 or 422 } => SubmitOutcome.Rejected,
+        _ => SubmitOutcome.RetryLater // no network (null), timeout, 5xx/cold start, anything else
+    };
+}
+
+public enum SubmitOutcome
+{
+    /// <summary>Stored by the server: mark as synced.</summary>
+    Accepted,
+    /// <summary>Token expired or revoked: keep queued until the technician logs in again.</summary>
+    SessionExpired,
+    /// <summary>The server will never accept it (invalid data): retrying forever blocks nothing but never succeeds.</summary>
+    Rejected,
+    /// <summary>Transient failure: keep queued and try again later.</summary>
+    RetryLater
+}
 
 public class LoginResponse
 {
