@@ -115,16 +115,31 @@ namespace AquaMap.ViewModels
             set { _turbidityWarning = value; OnPropertyChanged(); }
         }
 
-        private bool _eColiAbsent = true;
-        public bool EColiAbsent
+        // null = not informed yet. No default: a forgotten field must not count as "absent".
+        private bool? _eColiAbsent;
+        public bool? EColiAbsent
         {
             get => _eColiAbsent;
-            set 
-            { 
-                _eColiAbsent = value; 
-                OnPropertyChanged(); 
-                SaveDraft(); 
+            set
+            {
+                _eColiAbsent = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsEColiAbsentSelected));
+                OnPropertyChanged(nameof(IsEColiPresentSelected));
+                SaveDraft();
             }
+        }
+
+        public bool IsEColiAbsentSelected
+        {
+            get => _eColiAbsent == true;
+            set { if (value) EColiAbsent = true; }
+        }
+
+        public bool IsEColiPresentSelected
+        {
+            get => _eColiAbsent == false;
+            set { if (value) EColiAbsent = false; }
         }
 
         // GAP 7 — Campo de Ferro (Fe)
@@ -308,7 +323,7 @@ namespace AquaMap.ViewModels
             Preferences.Default.Set("Draft_Collection_Chlorine", ResidualChlorine);
             Preferences.Default.Set("Draft_Collection_Ph", Ph);
             Preferences.Default.Set("Draft_Collection_Turbidity", Turbidity);
-            Preferences.Default.Set("Draft_Collection_EColiAbsent", EColiAbsent);
+            Preferences.Default.Set("Draft_Collection_EColi", EColiAbsent switch { true => 1, false => 0, null => -1 });
             Preferences.Default.Set("Draft_Collection_Iron", Iron);
         }
 
@@ -317,7 +332,9 @@ namespace AquaMap.ViewModels
             _residualChlorine = Preferences.Default.Get("Draft_Collection_Chlorine", string.Empty);
             _ph = Preferences.Default.Get("Draft_Collection_Ph", string.Empty);
             _turbidity = Preferences.Default.Get("Draft_Collection_Turbidity", string.Empty);
-            _eColiAbsent = Preferences.Default.Get("Draft_Collection_EColiAbsent", true);
+            // The old boolean draft key defaulted to "absent"; drop it so it is never restored.
+            Preferences.Default.Remove("Draft_Collection_EColiAbsent");
+            _eColiAbsent = Preferences.Default.Get("Draft_Collection_EColi", -1) switch { 1 => true, 0 => false, _ => null };
             _iron = Preferences.Default.Get("Draft_Collection_Iron", string.Empty);
             _collectionLatitude = Preferences.Default.Get("Draft_Collection_Lat", string.Empty);
             _collectionLongitude = Preferences.Default.Get("Draft_Collection_Lng", string.Empty);
@@ -335,7 +352,7 @@ namespace AquaMap.ViewModels
             Preferences.Default.Remove("Draft_Collection_Chlorine");
             Preferences.Default.Remove("Draft_Collection_Ph");
             Preferences.Default.Remove("Draft_Collection_Turbidity");
-            Preferences.Default.Remove("Draft_Collection_EColiAbsent");
+            Preferences.Default.Remove("Draft_Collection_EColi");
             Preferences.Default.Remove("Draft_Collection_Iron");
         }
 
@@ -352,10 +369,10 @@ namespace AquaMap.ViewModels
                     IsChlorineValid = true;
                     ChlorineWarning = string.Empty;
                 }
-                else if (double.TryParse(ResidualChlorine.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                else if (WaterAnalysisInput.TryParseReading(ResidualChlorine, out double val))
                 {
-                    IsChlorineValid = val >= 0.2 && val <= 5.0;
-                    ChlorineWarning = IsChlorineValid ? string.Empty : "Ideal: 0.2 a 5.0 mg/L (Portaria 888)";
+                    ChlorineWarning = WaterAnalysisInput.DescribeChlorine(val) ?? string.Empty;
+                    IsChlorineValid = ChlorineWarning.Length == 0;
                 }
                 else
                 {
@@ -379,10 +396,10 @@ namespace AquaMap.ViewModels
                     IsPhValid = true;
                     PhWarning = string.Empty;
                 }
-                else if (double.TryParse(Ph.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                else if (WaterAnalysisInput.TryParseReading(Ph, out double val))
                 {
-                    IsPhValid = val >= 6.0 && val <= 9.5;
-                    PhWarning = IsPhValid ? string.Empty : "Ideal: 6.0 a 9.5 (Portaria 888)";
+                    PhWarning = WaterAnalysisInput.DescribePh(val) ?? string.Empty;
+                    IsPhValid = PhWarning.Length == 0;
                 }
                 else
                 {
@@ -406,10 +423,10 @@ namespace AquaMap.ViewModels
                     IsTurbidityValid = true;
                     TurbidityWarning = string.Empty;
                 }
-                else if (double.TryParse(Turbidity.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                else if (WaterAnalysisInput.TryParseReading(Turbidity, out double val))
                 {
-                    IsTurbidityValid = val <= 5.0 && val >= 0.0;
-                    TurbidityWarning = IsTurbidityValid ? string.Empty : "Ideal: ≤ 5.0 NTU (Portaria 888)";
+                    TurbidityWarning = WaterAnalysisInput.DescribeTurbidity(val) ?? string.Empty;
+                    IsTurbidityValid = TurbidityWarning.Length == 0;
                 }
                 else
                 {
@@ -434,10 +451,10 @@ namespace AquaMap.ViewModels
                     IsIronValid = true;
                     IronWarning = string.Empty;
                 }
-                else if (double.TryParse(Iron.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                else if (WaterAnalysisInput.TryParseReading(Iron, out double val))
                 {
-                    IsIronValid = val >= 0.0 && val <= 0.3;
-                    IronWarning = IsIronValid ? string.Empty : "Ideal: ≤ 0.3 mg/L (Portaria 888)";
+                    IronWarning = WaterAnalysisInput.DescribeIron(val) ?? string.Empty;
+                    IsIronValid = IronWarning.Length == 0;
                 }
                 else
                 {
@@ -581,6 +598,8 @@ namespace AquaMap.ViewModels
             }
         }
 
+        private bool _isConfirming;
+
         private async Task SubmitAnalysisAsync()
         {
             if (IsBusy) return;
@@ -592,43 +611,46 @@ namespace AquaMap.ViewModels
                 return;
             }
 
-            if (!IsChlorineValid || !IsPhValid || !IsTurbidityValid)
+            if (_isConfirming) return;
+
+            // Validated synchronously from the current text, not from the debounced warning flags.
+            var input = WaterAnalysisInput.Validate(ResidualChlorine, Ph, Turbidity, Iron, EColiAbsent);
+            if (!input.IsValid)
             {
                 IsSuccess = false;
-                StatusMessage = "Corrija os parâmetros fora do padrão antes de enviar.";
+                StatusMessage = input.Error!;
                 try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
                 return;
             }
 
-            if (!double.TryParse(ResidualChlorine?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double chlorine) ||
-                !double.TryParse(Ph?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double phVal) ||
-                !double.TryParse(Turbidity?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double turbidityVal))
+            // Out-of-standard readings are the alerts this system exists to record: confirm, never block.
+            if (input.OutOfStandard.Count > 0)
             {
-                IsSuccess = false;
-                StatusMessage = "Os parâmetros devem ser valores numéricos válidos.";
-                return;
+                _isConfirming = true;
+                bool confirmed;
+                try
+                {
+                    confirmed = await Shell.Current.DisplayAlert(
+                        "Parâmetros fora do padrão",
+                        "Fora da Portaria 888:\n• " + string.Join("\n• ", input.OutOfStandard) +
+                        "\n\nA coleta será registrada e o reservatório ficará em alerta. Os valores estão corretos?",
+                        "Registrar", "Revisar");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erro ao confirmar parâmetros: {ex}");
+                    IsSuccess = false;
+                    StatusMessage = "Não foi possível confirmar os parâmetros. Tente enviar novamente.";
+                    confirmed = false;
+                }
+                finally
+                {
+                    _isConfirming = false;
+                }
+                if (!confirmed) return;
             }
 
-            if (chlorine < 0)
-            {
-                IsSuccess = false;
-                StatusMessage = "O cloro residual não pode ser negativo.";
-                return;
-            }
-
-            if (phVal < 0 || phVal > 14)
-            {
-                IsSuccess = false;
-                StatusMessage = "O pH deve ser um valor entre 0.0 e 14.0.";
-                return;
-            }
-
-            if (turbidityVal < 0)
-            {
-                IsSuccess = false;
-                StatusMessage = "A turbidez não pode ser negativa.";
-                return;
-            }
+            var reading = input.Analysis!;
 
             IsBusy = true;
             StatusMessage = string.Empty;
@@ -644,9 +666,6 @@ namespace AquaMap.ViewModels
 
             try
             {
-                // Parse do Ferro (opcional, padrão 0)
-                double.TryParse(Iron?.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double ironVal);
-
                 // Resolver coordenadas da coleta
                 double? finalLat = _internalLatitude, finalLng = _internalLongitude;
                 if (!finalLat.HasValue && !string.IsNullOrWhiteSpace(CollectionLatitude) && !string.IsNullOrWhiteSpace(CollectionLongitude))
@@ -663,11 +682,11 @@ namespace AquaMap.ViewModels
                 var localAnalysis = new LocalWaterAnalysis
                 {
                     AnalysisDate = DateTime.UtcNow,
-                    ResidualChlorine = chlorine,
-                    Ph = phVal,
-                    Turbidity = turbidityVal,
-                    EColiAbsent = EColiAbsent,
-                    Iron = ironVal,
+                    ResidualChlorine = reading.ResidualChlorine,
+                    Ph = reading.Ph,
+                    Turbidity = reading.Turbidity,
+                    EColiAbsent = reading.EColiAbsent,
+                    Iron = reading.Iron,
                     CollectionLatitude = finalLat,
                     CollectionLongitude = finalLng,
                     ReservoirId = SelectedReservoir.Id,
@@ -692,7 +711,7 @@ namespace AquaMap.ViewModels
                 _turbidity = "";
                 _iron = "";
                 _selectedReservoir = null;
-                _eColiAbsent = true;
+                _eColiAbsent = null;
                 _internalLatitude = null;
                 _internalLongitude = null;
                 _collectionLatitude = "";
@@ -707,6 +726,8 @@ namespace AquaMap.ViewModels
                 OnPropertyChanged(nameof(Iron));
                 OnPropertyChanged(nameof(SelectedReservoir));
                 OnPropertyChanged(nameof(EColiAbsent));
+                OnPropertyChanged(nameof(IsEColiAbsentSelected));
+                OnPropertyChanged(nameof(IsEColiPresentSelected));
                 OnPropertyChanged(nameof(CollectionLatitude));
                 OnPropertyChanged(nameof(CollectionLongitude));
 
