@@ -137,6 +137,15 @@ namespace AquaMap.Public.Views
         }}).addTo(map);
 
         var markers = {markersJson};
+
+        // Reservoir and neighborhood names come from the backend: escape them before they reach
+        // Leaflet's HTML popup, so a name like <img onerror=...> is shown as text, not executed.
+        function esc(s) {{
+            return String(s == null ? '' : s).replace(/[&<>""']/g, function (c) {{
+                return {{ '&': '&amp;', '<': '&lt;', '>': '&gt;', '""': '&quot;', ""'"": '&#39;' }}[c];
+            }});
+        }}
+
         markers.forEach(function(m) {{
             
             // GAP 4: Zonas críticas no mapa por bairro (área de risco)
@@ -168,11 +177,11 @@ namespace AquaMap.Public.Views
 
             var marker = L.marker([m.lat, m.lng], {{ icon: customIcon }}).addTo(map);
             
-            var popUpText = '<b style=""font-size:14px"">' + m.name + '</b>';
+            var popUpText = '<b style=""font-size:14px"">' + esc(m.name) + '</b>';
             if (m.neighborhoods) {{
-                popUpText += '<br><span style=""color:#64748B;font-size:11px"">Bairros: ' + m.neighborhoods + '</span>';
+                popUpText += '<br><span style=""color:#64748B;font-size:11px"">Bairros: ' + esc(m.neighborhoods) + '</span>';
             }}
-            popUpText += '<br><br><a href=""aquamap://details/' + m.id + '"" style=""color:#0284C7;font-size:13px;font-weight:bold;text-decoration:none;"">Ver Qualidade da Água &rarr;</a>';
+            popUpText += '<br><br><a href=""aquamap://details/' + Number(m.id) + '"" style=""color:#0284C7;font-size:13px;font-weight:bold;text-decoration:none;"">Ver Qualidade da Água &rarr;</a>';
 
             marker.bindPopup(popUpText);
         }});
@@ -183,6 +192,8 @@ namespace AquaMap.Public.Views
             ReservoirMapWebView.Source = new HtmlWebViewSource { Html = html };
         }
 
+        private bool _isOpeningDetail;
+
         private async void OnWebViewNavigating(object? sender, WebNavigatingEventArgs e)
         {
             try
@@ -190,17 +201,48 @@ namespace AquaMap.Public.Views
                 if (e.Url.StartsWith("aquamap://details/"))
                 {
                     e.Cancel = true;
+                    // Repeated taps used to stack several detail pages (QA CID-09).
+                    if (_isOpeningDetail) return;
                     var idStr = e.Url.Replace("aquamap://details/", "");
                     if (int.TryParse(idStr, out int id))
                     {
-                        await Shell.Current.GoToAsync($"ReservoirDetailPage?Id={id}");
+                        _isOpeningDetail = true;
+                        try
+                        {
+                            await Shell.Current.GoToAsync($"ReservoirDetailPage?Id={id}");
+                        }
+                        finally
+                        {
+                            _isOpeningDetail = false;
+                        }
                     }
+                }
+                else if (e.Url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                         e.Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    // External links (e.g. "Leaflet" in the attribution) replaced the map inside the app and
+                    // "back" then closed it (QA CID-02). Open them in the system browser instead.
+                    e.Cancel = true;
+                    await OpenInBrowserAsync(e.Url);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao abrir detalhes do reservatório: {ex}");
                 await SafeAlertAsync("Erro", "Não foi possível abrir os detalhes do reservatório.");
+            }
+        }
+
+        private async Task OpenInBrowserAsync(string url)
+        {
+            try
+            {
+                await Launcher.Default.OpenAsync(new Uri(url));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao abrir link externo: {ex}");
+                await SafeAlertAsync("Erro", "Não foi possível abrir o link.");
             }
         }
 
