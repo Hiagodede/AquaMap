@@ -22,7 +22,8 @@ public class WaterReportTests
         var report = WaterReport.Build("Guararema", new[] { older, newer }, new DateTime(2026, 10, 20, 9, 0, 0));
 
         Assert.Equal(2, report.Rows.Count);
-        Assert.Equal(newer.AnalysisDateLocal.ToString("dd/MM/yyyy HH:mm"), report.Rows[0].Date);
+        Assert.Equal(newer.AnalysisDateLocal.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")),
+            report.Rows[0].Date);
         Assert.Equal("1,25", report.Rows[1].Chlorine);
         Assert.Equal("7,2", report.Rows[1].Ph);
         Assert.Equal("0,80", report.Rows[0].Iron);
@@ -90,6 +91,43 @@ public class WaterReportTests
         var fileName = WaterReport.FileName(new string('x', 100), new DateTime(2026, 10, 20));
 
         Assert.Equal("Boletim_".Length + 60 + "_20261020.pdf".Length, fileName.Length);
+    }
+
+    // The real A4 layout: 30 rows on the first page, 35 on the others. The conclusion (92 pt) must stay above
+    // the footer, so it gets its own page once the last table is too long.
+    [Fact]
+    public void A4_layout_fits_30_rows_then_35()
+    {
+        Assert.Equal(30, WaterReportLayout.A4.RowsThatFit(WaterReportLayout.A4.TableTopFirstPage));
+        Assert.Equal(35, WaterReportLayout.A4.RowsThatFit(WaterReportLayout.A4.TableTopOtherPages));
+    }
+
+    [Theory]
+    [InlineData(0, 1, false)]
+    [InlineData(25, 1, false)]       // last row count that leaves room for the conclusion on page 1
+    [InlineData(26, 2, true)]
+    [InlineData(30, 2, true)]        // full first page
+    [InlineData(31, 2, false)]
+    [InlineData(30 + 31, 2, false)]  // last row count that leaves room on a continuation page
+    [InlineData(30 + 32, 3, true)]
+    [InlineData(30 + 35, 3, true)]   // full second page
+    [InlineData(30 + 35 + 1, 3, false)]
+    public void A4_plan_never_draws_the_conclusion_over_the_footer(int rowCount, int totalPages, bool conclusionOnNewPage)
+    {
+        var history = Enumerable.Range(0, rowCount).Select(i => Analysis(new DateTime(2026, 1, 1).AddDays(i)));
+        var layout = WaterReportLayout.A4;
+
+        var plan = WaterReport.Build("R", history, DateTime.Now).Plan(layout);
+
+        Assert.Equal(totalPages, plan.TotalPages);
+        Assert.Equal(conclusionOnNewPage, plan.ConclusionOnNewPage);
+        Assert.Equal(rowCount, plan.Pages.Sum(p => p.Count));
+        // Where the conclusion starts: on its own page right below the continuation header, or below the last table.
+        float lastTableTop = plan.Pages.Count == 1 ? layout.TableTopFirstPage : layout.TableTopOtherPages;
+        float conclusionTop = plan.ConclusionOnNewPage
+            ? layout.TableTopOtherPages
+            : lastTableTop + layout.RowHeight * (plan.Pages[^1].Count + 1);
+        Assert.True(conclusionTop + layout.ConclusionHeight <= layout.ContentBottom);
     }
 
     [Theory]

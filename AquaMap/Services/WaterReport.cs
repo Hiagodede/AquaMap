@@ -12,6 +12,23 @@ namespace AquaMap.Services
         string Date, string Chlorine, string Ph, string Turbidity, string Iron, string EColi,
         bool IsPotable, bool ChlorineOut, bool PhOut, bool TurbidityOut, bool IronOut, bool EColiOut);
 
+    /// <summary>Vertical layout of a bulletin page, in PDF points. Pure so the pagination can be tested off-device.</summary>
+    public sealed record WaterReportLayout(float TableTopFirstPage, float TableTopOtherPages, float RowHeight,
+        float ContentBottom, float ConclusionHeight)
+    {
+        /// <summary>A4 (595 x 842) with 40 pt margins and the footer line at 808.</summary>
+        public static readonly WaterReportLayout A4 = new(178f, 64f, 20f, 798f, 92f);
+
+        /// <summary>Data rows that fit below a table that starts at <paramref name="tableTop"/> (one row is the header).</summary>
+        public int RowsThatFit(float tableTop) => (int)((ContentBottom - tableTop - RowHeight) / RowHeight);
+    }
+
+    /// <summary>Rows of each page and whether the conclusion needs a page of its own.</summary>
+    public sealed record WaterReportPlan(IReadOnlyList<IReadOnlyList<WaterReportRow>> Pages, bool ConclusionOnNewPage)
+    {
+        public int TotalPages => Pages.Count + (ConclusionOnNewPage ? 1 : 0);
+    }
+
     /// <summary>
     /// Content of the water quality bulletin, independent of how it is drawn. Standards come from the domain
     /// (<see cref="WaterAnalysis"/>); dates are local and numbers use pt-BR formatting.
@@ -84,6 +101,15 @@ namespace AquaMap.Services
             for (int i = firstPageRows; i < Rows.Count; i += otherPageRows)
                 pages.Add(Rows.Skip(i).Take(otherPageRows).ToList());
             return pages;
+        }
+
+        /// <summary>Splits the rows for <paramref name="layout"/>; the conclusion goes to a new page when it would reach the footer.</summary>
+        public WaterReportPlan Plan(WaterReportLayout layout)
+        {
+            var pages = Paginate(layout.RowsThatFit(layout.TableTopFirstPage), layout.RowsThatFit(layout.TableTopOtherPages));
+            float lastTop = pages.Count == 1 ? layout.TableTopFirstPage : layout.TableTopOtherPages;
+            float tableBottom = lastTop + layout.RowHeight * (pages[^1].Count + 1);
+            return new WaterReportPlan(pages, tableBottom + layout.ConclusionHeight > layout.ContentBottom);
         }
     }
 }

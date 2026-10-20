@@ -12,8 +12,9 @@ namespace AquaMap.Services
         /// <summary>Writes the bulletin to the app cache (shareable, cleaned by the system) and returns its path.</summary>
         public Task<string> GenerateReservoirReportAsync(string reservoirName, IEnumerable<WaterAnalysis> history)
         {
-            var report = WaterReport.Build(reservoirName, history, DateTime.Now);
-            var filePath = Path.Combine(FileSystem.CacheDirectory, WaterReport.FileName(reservoirName, DateTime.Now));
+            var now = DateTime.Now; // read once: near midnight the file name and the issue date could differ
+            var report = WaterReport.Build(reservoirName, history, now);
+            var filePath = Path.Combine(FileSystem.CacheDirectory, WaterReport.FileName(reservoirName, now));
 #if ANDROID
             return Task.Run(() =>
             {
