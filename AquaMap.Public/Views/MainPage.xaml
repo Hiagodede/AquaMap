@@ -7,78 +7,73 @@
              Title="Mapa da Água"
              BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0F172A}">
 
-    <Grid>
-        <!-- WebView para o Mapa Leaflet -->
-        <WebView x:Name="ReservoirMapWebView"
-                 HorizontalOptions="Fill"
-                 VerticalOptions="Fill" />
-
-        <!-- Floating Header -->
-        <Border VerticalOptions="Start"
+    <!-- Header, map and legend in their own rows: as overlays they covered the zoom buttons and the
+         popups of markers near the top (QA EST-15). -->
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0"
                 HorizontalOptions="Fill"
-                Margin="16,40,16,12"
+                Margin="16,12,16,8"
                 StrokeShape="RoundRectangle 16"
                 Stroke="Transparent"
-                Padding="16,14"
-                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
-            <Border.Shadow><Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.12" /></Border.Shadow>
-            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-                    <Label Text="Mapa da Qualidade da Água" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=White}" />
-                    <Label Text="Transparência e Saúde Pública" FontSize="12" TextColor="#64748B" />
-                </VerticalStackLayout>
-            </Grid>
-        </Border>
-
-        <!-- Floating Legend -->
-        <Border VerticalOptions="End"
-                HorizontalOptions="Fill"
-                Margin="16,0,16,30"
-                StrokeShape="RoundRectangle 12"
-                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
                 Padding="16,12"
-                BackgroundColor="{AppThemeBinding Light=#FFFFFFFA, Dark=#1E293BFA}">
-            <Border.Shadow><Shadow Brush="#000" Offset="0,4" Radius="12" Opacity="0.1" /></Border.Shadow>
-            <VerticalStackLayout Spacing="8">
-                <Label Text="Legenda" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource TextMuted}" />
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
-                    <!-- Item 1 -->
-                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
-                        <Border WidthRequest="14" HeightRequest="14" StrokeShape="RoundRectangle 7" BackgroundColor="#10B981" VerticalOptions="Center" />
-                        <Label Text="Padrão Ideal" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                    </HorizontalStackLayout>
-                    <!-- Item 2 -->
-                    <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
-                        <!-- Triângulo via Polygon no MAUI -->
-                        <Polygon Points="7,0 14,14 0,14" Fill="#EF4444" WidthRequest="14" HeightRequest="14" VerticalOptions="Center" />
-                        <Label Text="Alerta" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                    </HorizontalStackLayout>
-                    <!-- Item 3 -->
-                    <HorizontalStackLayout Grid.Column="2" Spacing="6" VerticalOptions="Center">
-                        <Border WidthRequest="12" HeightRequest="12" StrokeShape="RoundRectangle 2" BackgroundColor="#F59E0B" VerticalOptions="Center" />
-                        <Label Text="Sem Dados" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
-                    </HorizontalStackLayout>
-                </Grid>
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+            <Border.Shadow><Shadow Brush="#000" Offset="0,2" Radius="8" Opacity="0.10" /></Border.Shadow>
+            <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                <Label Text="Mapa da Qualidade da Água" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#0E4F63, Dark=White}" />
+                <Label Text="Toque em um reservatório para ver a situação da água." FontSize="12" TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" />
             </VerticalStackLayout>
         </Border>
 
+        <!-- WebView para o Mapa Leaflet -->
+        <WebView Grid.Row="1"
+                 x:Name="ReservoirMapWebView"
+                 HorizontalOptions="Fill"
+                 VerticalOptions="Fill" />
+
+        <!-- Legend: the same status texts as the popup and the detail screen; wraps with large fonts (QA CID-10). -->
+        <Border Grid.Row="2"
+                HorizontalOptions="Fill"
+                Margin="16,8,16,12"
+                StrokeShape="RoundRectangle 12"
+                Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#334155}"
+                Padding="16,10"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E293B}">
+            <FlexLayout Wrap="Wrap" JustifyContent="SpaceAround" AlignItems="Center">
+                <HorizontalStackLayout Spacing="6" Margin="4,2" SemanticProperties.Description="Círculo verde com visto: água própria para consumo">
+                    <Border WidthRequest="14" HeightRequest="14" StrokeShape="RoundRectangle 7" BackgroundColor="#10B981" VerticalOptions="Center" />
+                    <Label Text="Própria" FontSize="12" TextColor="{AppThemeBinding Light=#334155, Dark=#E2E8F0}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6" Margin="4,2" SemanticProperties.Description="Triângulo vermelho: água em alerta">
+                    <Polygon Points="7,0 14,14 0,14" Fill="#EF4444" WidthRequest="14" HeightRequest="14" VerticalOptions="Center" />
+                    <Label Text="Em alerta" FontSize="12" TextColor="{AppThemeBinding Light=#334155, Dark=#E2E8F0}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6" Margin="4,2" SemanticProperties.Description="Quadrado laranja: ainda sem análise">
+                    <Border WidthRequest="12" HeightRequest="12" StrokeShape="RoundRectangle 2" BackgroundColor="#F59E0B" VerticalOptions="Center" />
+                    <Label Text="Sem análise" FontSize="12" TextColor="{AppThemeBinding Light=#334155, Dark=#E2E8F0}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </FlexLayout>
+        </Border>
+
         <!-- Loading -->
-        <Border IsVisible="{Binding IsBusy}"
+        <Border Grid.RowSpan="3"
+                IsVisible="{Binding IsBusy}"
                 HorizontalOptions="Center"
                 VerticalOptions="Center"
                 Margin="32,0"
                 StrokeShape="RoundRectangle 12"
                 Stroke="Transparent"
                 Padding="20,16"
-                BackgroundColor="{AppThemeBinding Light=#FFFFFFEE, Dark=#1E293BEE}">
+                BackgroundColor="{AppThemeBinding Light=#EEFFFFFF, Dark=#EE1E293B}">
             <VerticalStackLayout Spacing="10">
                 <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" HorizontalOptions="Center" />
-                <Label Text="Conectando ao servidor (pode levar até 1 minuto)..." FontSize="13" HorizontalTextAlignment="Center" TextColor="{StaticResource TextSecondary}" />
+                <Label Text="Conectando ao servidor (pode levar até 1 minuto)..." FontSize="13" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=#334155, Dark=#E2E8F0}" />
             </VerticalStackLayout>
         </Border>
 
         <!-- Erro / sem internet -->
-        <Border IsVisible="{Binding HasError}"
+        <Border Grid.RowSpan="3"
+                IsVisible="{Binding HasError}"
                 HorizontalOptions="Center"
                 VerticalOptions="Center"
                 Margin="32,0"
@@ -88,7 +83,7 @@
                 Padding="20,16"
                 BackgroundColor="{AppThemeBinding Light=#FEF2F2, Dark=#1E293B}">
             <VerticalStackLayout Spacing="12">
-                <Label Text="{Binding ErrorMessage}" FontSize="13" HorizontalTextAlignment="Center" TextColor="#EF4444" />
+                <Label Text="{Binding ErrorMessage}" FontSize="13" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=#B91C1C, Dark=#FCA5A5}" />
                 <Button Text="Tentar novamente" Clicked="OnRetryClicked" BackgroundColor="#155E75" TextColor="White" CornerRadius="8" HorizontalOptions="Center" />
             </VerticalStackLayout>
         </Border>

@@ -82,6 +82,20 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Acessibilidade: `SemanticProperties`, contraste AA, fonte dinâmica, alvos de toque ≥ 48dp, status da água não depender só de cor
 - [ ] App Cidadão: linguagem simples ("Água própria para consumo"), explicação de cada parâmetro, data da última coleta em destaque
 - [ ] App Técnico: fluxo de coleta em poucos toques, indicador claro de pendências de sincronização
+- [x] Cidadão explica o alerta (QA CID-07, INS-14; PR `fix/cidadao-alerta`). O popup mostra a situação e a data da última coleta. O detalhe tem o cartão "Situação atual", que lista os parâmetros fora do padrão com o limite, e cada parâmetro aparece com o seu padrão, em vermelho e com ⚠ quando está fora dele. Textos e status vêm de `WaterQuality`, no domínio
+- [x] Cidadão, ajustes da mesma rodada:
+  - O cabeçalho e a legenda não cobrem mais o zoom (EST-15).
+  - As cores #AARRGGBB do modo escuro foram corrigidas (CID-05).
+  - Detalhe com estado vazio e estado de erro com "Tentar novamente" (CID-06).
+  - "Voltar" fecha o popup aberto em vez de sair do app (CID-13).
+  - Pins na mesma coordenada são afastados ~15 m (INS-21).
+  - Marcadores com rótulo para leitor de tela (CID-08).
+  - A legenda quebra a linha com fonte grande (CID-10).
+- [ ] Cidadão, ficou para depois:
+  - A zona de alerta de 800 m (**[DECISÃO]**).
+  - Recarregar o mapa ao voltar ao app / botão "Atualizar".
+  - Mensagem própria para "nenhum reservatório cadastrado".
+  - Cores do template (status bar roxa, CID-14).
 - [x] M-06: leitura fora da faixa é registrada como alerta, com confirmação; só valores fisicamente impossíveis são recusados (regra 4 do CLAUDE.md; PR `fix/coleta-regras`). Pendente com o SAAE: confirmar no texto da Portaria 888 o limite de pH (9,0 recomendado vs. 9,5 atual) e o recomendado de cloro (≤ 2,0)
 
 ## Fase 5 — Observabilidade e lançamento
