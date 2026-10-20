@@ -51,6 +51,8 @@ namespace AquaMap.Services
         {
             await InitAsync().ConfigureAwait(false);
             await _database!.DeleteAsync<LocalReservoir>(id).ConfigureAwait(false);
+            // Pending collections stay: the sync shows them to the technician as refused instead of losing them silently.
+            await _database.ExecuteAsync("DELETE FROM LocalWaterAnalysis WHERE ReservoirId = ? AND IsPendingSync = 0", id).ConfigureAwait(false);
         }
 
         // --- WATER ANALYSIS OPERATIONS ---

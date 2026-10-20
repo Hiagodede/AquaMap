@@ -25,7 +25,7 @@ Branch `fix/entrega-16h`, criado a partir do `hiago` (`a90b8b5`). São 19 commit
 |---|---|---|
 | B-03 | Qualquer usuário logado podia criar um Administrador | `Program.cs` |
 | B-03b | Era possível apagar a si mesmo ou o último Administrador | `Program.cs` |
-| B-04 | Apagar um reservatório levava todo o histórico de análises junto. Agora a exclusão é recusada (409) se houver análises | `Program.cs` |
+| B-04 | Apagar um reservatório levava todo o histórico de análises junto. Agora a exclusão é recusada (409) se houver análises. **Revisto na `fix/exclusao-reservatorio-admin`:** só o Administrador exclui, e a exclusão leva as análises junto, com confirmação dupla no app | `Program.cs` |
 | B-05 | A API aceitava campos internos vindos do app e GPS fora da faixa | `Program.cs` |
 | B-06 | Cadastro de usuário sem validação, e campos faltando davam erro 500 | `Program.cs` |
 | B-08 | A regra de potabilidade estava copiada em `/metrics`. O resultado continua igual | `Program.cs` |
@@ -58,7 +58,7 @@ Branch `fix/entrega-16h`, criado a partir do `hiago` (`a90b8b5`). São 19 commit
 4. **Admin criado automaticamente (B-07).** O admin com CPF 000.000.000-00 não consegue entrar pelo app. Falta definir as credenciais.
 5. **Leituras fora do padrão (M-06).** O formulário de coleta recusa pH e turbidez fora da faixa, então alertas reais nunca são registrados. Mudar isso é decisão do SAAE, e mexe no mesmo arquivo do `80bb98e`.
 6. **Tela de template no Cidadão (M-13).** O `MauiProgram.cs` ainda registra a `MainPage` de template da raiz do projeto. Apagá-la muda qual página é registrada, então precisa de teste no aparelho.
-7. **Exclusão em cascata no banco.** A proteção do B-04 está no código. A definitiva é `OnDelete(Restrict)`, que exige uma migration.
+7. **Exclusão em cascata no banco.** ~~A definitiva é `OnDelete(Restrict)`~~. Decisão do dono do projeto: o Administrador pode excluir o reservatório com as análises, então a cascata fica como está (ver `docs/PLANO_V2.md`, Fase 2).
 
 **Não foi feito, por decisão**
 - **M-04 e M-05 (Ferro/GPS no sync e faixa de cloro):** já estão no seu `80bb98e`.

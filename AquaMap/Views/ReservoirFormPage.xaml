@@ -273,9 +273,9 @@
                 </Button.Triggers>
             </Button>
 
-            <!-- Botão Excluir (apenas edição) -->
+            <!-- Botão Excluir (apenas edição, apenas administrador) -->
             <Button Text="Excluir Reservatório" Command="{Binding DeleteCommand}"
-                    IsVisible="{Binding IsEditing}" IsEnabled="{Binding IsNotBusy}"
+                    IsVisible="{Binding CanDelete}" IsEnabled="{Binding IsNotBusy}"
                     FontSize="14" HeightRequest="46" CornerRadius="14"
                     TextColor="#EF4444" BackgroundColor="#FEE2E2"
                     BorderColor="#FECACA" BorderWidth="1" />

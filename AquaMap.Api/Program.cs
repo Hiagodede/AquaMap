@@ -51,7 +51,9 @@ builder.Services.AddAuthentication(x =>
     };
 });
 
-builder.Services.AddAuthorization();
+// O token leva ClaimTypes.Role com o nome do UserType (ver TokenService).
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(AuthPolicies.Administrator, policy => policy.RequireRole(nameof(UserType.Administrator)));
 
 var app = builder.Build();
 
@@ -60,8 +62,10 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     
-    // Roda todas as migrações pendentes no banco (ex: quando subir no Render/Supabase)
-    db.Database.Migrate();
+    // Roda todas as migrações pendentes no banco (ex: quando subir no Render/Supabase).
+    // Os testes de integração usam um banco em memória, que não tem migrations.
+    if (db.Database.IsRelational())
+        db.Database.Migrate();
 
     if (!db.Users.Any())
     {
@@ -168,20 +172,31 @@ app.MapPut("/reservoirs/{id}", async (AppDbContext db, int id, ReservoirRequest 
 .WithName("UpdateReservoir")
 .RequireAuthorization();
 
-app.MapDelete("/reservoirs/{id}", async (AppDbContext db, int id) =>
+// Só o Administrador exclui, e a exclusão leva junto as análises e os bairros do reservatório
+// (decisão do dono do projeto). Com análises, o cliente precisa informar quantas viu na confirmação
+// (expectedAnalyses): o app antigo não informa e continua recebendo o 409, e uma coleta que chegou
+// depois da confirmação também barra a exclusão.
+app.MapDelete("/reservoirs/{id}", async (AppDbContext db, ILogger<Program> logger, int id, int? expectedAnalyses, System.Security.Claims.ClaimsPrincipal currentUser) =>
 {
-    var reservoir = await db.Reservoirs.FindAsync(id);
+    var reservoir = await db.Reservoirs.FirstOrDefaultAsync(r => r.Id == id);
     if (reservoir is null) return Results.NotFound();
-    // A FK das análises é em cascata: apagar o reservatório apagaria o histórico de qualidade da água.
-    var hasAnalyses = await db.WaterAnalyses.AnyAsync(w => w.ReservoirId == id);
-    if (hasAnalyses)
-        return Results.Conflict(new { error = "Não é possível excluir: o reservatório possui análises registradas." });
+
+    var analysisCount = await db.WaterAnalyses.CountAsync(w => w.ReservoirId == id);
+    if (analysisCount > 0 && expectedAnalyses != analysisCount)
+        return Results.Conflict(new { error = "O reservatório possui análises registradas que não foram confirmadas para exclusão.", analysisCount });
+
+    // A FK do PostgreSQL já apaga em cascata; carregar os dependentes faz o mesmo no banco em memória dos testes.
+    await db.Entry(reservoir).Collection(r => r.WaterAnalyses).LoadAsync();
+    await db.Entry(reservoir).Collection(r => r.Neighborhoods).LoadAsync();
     db.Reservoirs.Remove(reservoir);
     await db.SaveChangesAsync();
+
+    logger.LogWarning("Reservatório {ReservoirId} excluído com {AnalysisCount} análises pelo usuário {UserId}.",
+        id, analysisCount, currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
     return Results.NoContent();
 })
 .WithName("DeleteReservoir")
-.RequireAuthorization();
+.RequireAuthorization(AuthPolicies.Administrator);
 
 app.MapPost("/water-analysis", async (AppDbContext db, WaterAnalysis analysis) =>
 {
@@ -360,6 +375,11 @@ static string? ValidateCreateUser(CreateUserRequest r)
     if (r.Email is null || r.Email.Length > 254) return "E-mail é obrigatório e deve ter no máximo 254 caracteres.";
     if (!Enum.IsDefined(r.Role)) return "Papel (Role) inválido.";
     return null;
+}
+
+static class AuthPolicies
+{
+    public const string Administrator = "Administrator";
 }
 
 public record LoginRequest(string TaxId, string Password);
