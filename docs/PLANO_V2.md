@@ -63,6 +63,14 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Refresh token (hoje o login expira em 8h sem renovação)
 - [ ] `GET /users`: só para admin e sem CPF completo (mascarar)
 - [ ] Política de privacidade + respostas do formulário de Data Safety da Google Play
+- [x] Técnico sem `usesCleartextTraffic`: toda comunicação só por HTTPS (QA 6.1; PR `fix/coordenada-transporte`). Para testar contra uma API local em HTTP no emulador, será preciso liberar o tráfego só no build Debug
+- [x] Leaflet carregado da CDN com `integrity` (SRI) e aviso "mapa indisponível" se não carregar (QA EST-14; PR `fix/coordenada-transporte`). Embarcar o Leaflet no app fica para depois: o mapa depende de internet de qualquer forma, por causa dos blocos do OpenStreetMap
+- [ ] Chave do Google Maps fixa no `AndroidManifest.xml` do Técnico: restringir no console do Google (pacote + SHA-1) ou mover para configuração de build
+- [ ] API: `POST`/`PUT /reservoirs` não validam latitude, longitude e nome (hoje só o app valida). Aplicar as mesmas faixas da coleta e `Trim()` no nome (QA INS-13)
+- [ ] `appsettings.Development.json` dos dois apps aponta para a API de produção: um build Debug grava no banco real (contraria a regra 2). Apontar para staging ou local quando existir
+- [ ] `allowBackup="true"` nos dois apps: no Técnico, o backup do Android leva o SQLite com as coletas. Usar `dataExtractionRules`/`fullBackupContent` excluindo o banco, ou desligar (QA 6.2)
+- [ ] `ApiClientFactory` aceita `BaseUrl` sem HTTPS: recusar em Release
+- [ ] Rascunho da coleta não guarda a localização: `LoadDraft` lê `Draft_Collection_Lat/Lng`, mas `SaveDraft` nunca grava essas chaves. Se o Android encerrar o app, a posição capturada se perde
 
 ## Fase 3 — Arquitetura
 
@@ -109,3 +117,5 @@ _Agentes: anotem aqui ideias de features novas em vez de implementá-las._
 | Data | Decisão |
 |---|---|
 | 2026-10-04 | `v2` criada a partir de `origin/hiago` + `fix/coleta-ferro-gps-cloro`. `master` congelada na tag `v1.0-estavel` |
+| 2026-10-19 | Distribuição dos APKs pelo site oficial, **não** pela Google Play. Os itens de loja da Fase 5 (AAB, Data Safety, textos e screenshots, exigência de targetSdk) deixam de ser bloqueadores. O `applicationId` só pode mudar antes da primeira distribuição pública, porque um id novo é outro app para o Android e não atualiza o instalado |
+| 2026-10-19 | Coordenadas (QA EST-12): os campos de latitude/longitude são a única fonte. O GPS e o mapa os preenchem, e uma edição manual depois disso é o que vale (`AquaMap/Helpers/CoordinateInput.cs`) |

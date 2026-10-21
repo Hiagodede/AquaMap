@@ -10,6 +10,7 @@ using AquaMap.Domain.Entities;
 using AquaMap.Services;
 using AquaMap.Client.Shared;
 using AquaMap.Models;
+using AquaMap.Helpers;
 using Microsoft.Maui.Networking;
 
 namespace AquaMap.ViewModels
@@ -171,8 +172,6 @@ namespace AquaMap.ViewModels
         }
 
         // GAP 1 — GPS do ponto de coleta (UX 3 Modos)
-        private double? _internalLatitude;
-        private double? _internalLongitude;
         private string _collectionLatitude = string.Empty;
         private string _collectionLongitude = string.Empty;
         private bool _isFormattingCoord = false;
@@ -184,10 +183,11 @@ namespace AquaMap.ViewModels
             {
                 if (_isFormattingCoord) { _collectionLatitude = value; return; }
                 _isFormattingCoord = true;
-                _collectionLatitude = SanitizeCoordinate(value ?? "");
+                _collectionLatitude = CoordinateInput.Sanitize(value ?? "");
                 OnPropertyChanged();
                 _isFormattingCoord = false;
                 SaveDraft();
+                RefreshLocationFromFields();
             }
         }
 
@@ -198,10 +198,11 @@ namespace AquaMap.ViewModels
             {
                 if (_isFormattingCoord) { _collectionLongitude = value; return; }
                 _isFormattingCoord = true;
-                _collectionLongitude = SanitizeCoordinate(value ?? "");
+                _collectionLongitude = CoordinateInput.Sanitize(value ?? "");
                 OnPropertyChanged();
                 _isFormattingCoord = false;
                 SaveDraft();
+                RefreshLocationFromFields();
             }
         }
 
@@ -468,11 +469,9 @@ namespace AquaMap.ViewModels
         // GAP 1 — Captura de GPS do ponto de coleta
         public void SetLocationFromMap(double lat, double lng)
         {
-            _internalLatitude = lat;
-            _internalLongitude = lng;
             _isFormattingCoord = true;
-            CollectionLatitude = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            CollectionLongitude = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            CollectionLatitude = CoordinateInput.Format(lat);
+            CollectionLongitude = CoordinateInput.Format(lng);
             _isFormattingCoord = false;
             OnPropertyChanged(nameof(CollectionLatitude));
             OnPropertyChanged(nameof(CollectionLongitude));
@@ -496,11 +495,9 @@ namespace AquaMap.ViewModels
                         TimeSpan.FromSeconds(10)));
                 if (location != null)
                 {
-                    _internalLatitude = location.Latitude;
-                    _internalLongitude = location.Longitude;
                     _isFormattingCoord = true;
-                    CollectionLatitude = location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    CollectionLongitude = location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    CollectionLatitude = CoordinateInput.Format(location.Latitude);
+                    CollectionLongitude = CoordinateInput.Format(location.Longitude);
                     _isFormattingCoord = false;
                     OnPropertyChanged(nameof(CollectionLatitude));
                     OnPropertyChanged(nameof(CollectionLongitude));
@@ -623,6 +620,20 @@ namespace AquaMap.ViewModels
                 return;
             }
 
+            // The location is optional. The fields hold GPS/map values and any manual edit made afterwards (QA EST-12).
+            // Checked before the out-of-standard dialog so the technician never confirms twice; invalid values are
+            // refused here, otherwise the collection would be saved, then rejected on sync.
+            var coords = CoordinateInput.Parse(CollectionLatitude, CollectionLongitude);
+            if (coords.Status == CoordinateInputStatus.Invalid)
+            {
+                IsSuccess = false;
+                StatusMessage = "Coordenadas inválidas: preencha latitude e longitude (latitude entre -90 e 90, longitude entre -180 e 180) ou deixe as duas em branco.";
+                try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.LongPress); } catch { }
+                return;
+            }
+            double? finalLat = coords.Status == CoordinateInputStatus.Valid ? coords.Latitude : null;
+            double? finalLng = coords.Status == CoordinateInputStatus.Valid ? coords.Longitude : null;
+
             // Out-of-standard readings are the alerts this system exists to record: confirm, never block.
             if (input.OutOfStandard.Count > 0)
             {
@@ -677,26 +688,6 @@ namespace AquaMap.ViewModels
 
             try
             {
-                // Resolver coordenadas da coleta
-                double? finalLat = _internalLatitude, finalLng = _internalLongitude;
-                if (!finalLat.HasValue && !string.IsNullOrWhiteSpace(CollectionLatitude) && !string.IsNullOrWhiteSpace(CollectionLongitude))
-                {
-                    if (double.TryParse(CollectionLatitude.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l1) &&
-                        double.TryParse(CollectionLongitude.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double l2))
-                    {
-                        finalLat = l1;
-                        finalLng = l2;
-                    }
-                }
-
-                // Same ranges the API enforces: otherwise the collection would be saved, then rejected on sync.
-                if (finalLat is < -90 or > 90 || finalLng is < -180 or > 180)
-                {
-                    IsSuccess = false;
-                    StatusMessage = "Coordenadas inválidas: a latitude deve estar entre -90 e 90 e a longitude entre -180 e 180.";
-                    return;
-                }
-
                 // Criar entidade local do banco de dados SQLite com IsPendingSync = true
                 var localAnalysis = new LocalWaterAnalysis
                 {
@@ -733,8 +724,6 @@ namespace AquaMap.ViewModels
                 _iron = "";
                 _selectedReservoir = null;
                 _eColiAbsent = null;
-                _internalLatitude = null;
-                _internalLongitude = null;
                 _collectionLatitude = "";
                 _collectionLongitude = "";
                 LocationDisplay = string.Empty;
@@ -816,19 +805,12 @@ namespace AquaMap.ViewModels
             }
         }
 
-        private static string SanitizeCoordinate(string input)
+        // A manual edit after GPS/map must update the card: it shows what will be saved, or nothing.
+        private void RefreshLocationFromFields()
         {
-            if (string.IsNullOrEmpty(input)) return input;
-            bool hasNegative = false, hasDecimal = false;
-            int decimalDigits = 0;
-            var result = new System.Text.StringBuilder();
-            foreach (char c in input)
-            {
-                if (c == '-' && !hasNegative && result.Length == 0) { hasNegative = true; result.Append(c); }
-                else if ((c == '.' || c == ',') && !hasDecimal) { hasDecimal = true; result.Append('.'); }
-                else if (char.IsDigit(c)) { if (hasDecimal) { if (decimalDigits < 6) { result.Append(c); decimalDigits++; } } else result.Append(c); }
-            }
-            return result.ToString();
+            var coords = CoordinateInput.Parse(CollectionLatitude, CollectionLongitude);
+            LocationCaptured = coords.Status == CoordinateInputStatus.Valid;
+            LocationDisplay = LocationCaptured ? $"📍 {coords.Latitude:F5}, {coords.Longitude:F5}" : string.Empty;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
