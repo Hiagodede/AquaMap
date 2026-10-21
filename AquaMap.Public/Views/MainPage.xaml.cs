@@ -90,8 +90,9 @@ namespace AquaMap.Public.Views
 <html>
 <head>
     <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
-    <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
-    <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+    <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=' crossorigin='' />
+    <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js' integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=' crossorigin=''></script>
+    <script>if (typeof L === 'undefined') {{ document.addEventListener('DOMContentLoaded', function () {{ document.body.innerHTML = ""<p style='font-family:sans-serif;padding:24px;text-align:center;color:#475569'>Não foi possível carregar o mapa. Verifique a conexão e tente novamente.</p>""; }}); }}</script>
     <style>
         * {{ box-sizing: border-box; }}
         body, html {{ padding: 0; margin: 0; height: 100%; width: 100%; overflow: hidden; }}

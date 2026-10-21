@@ -97,14 +97,19 @@ namespace AquaMap.ViewModels
 
             ExportPdfCommand = new Command(async () =>
             {
-                if (IsBusy || AnalysisHistory.Count == 0) return;
+                if (IsBusy) return;
+                if (AnalysisHistory.Count == 0)
+                {
+                    try { await Shell.Current.DisplayAlert("Exportar PDF", "Não há análises para exportar neste reservatório.", "OK"); }
+                    catch (Exception alertEx) { System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {alertEx.Message}"); }
+                    return;
+                }
                 IsBusy = true;
                 try
                 {
-                    var filePath = pdfExportService.GenerateReservoirReport(ReservoirName, AnalysisHistory);
-                    await Shell.Current.DisplayAlert("Boletim Gerado", $"PDF salvo em:\n{filePath}", "OK");
-                    
-                    // Share the file
+                    var filePath = await pdfExportService.GenerateReservoirReportAsync(ReservoirName, AnalysisHistory);
+
+                    // The share sheet is the confirmation; the internal path means nothing to the technician.
                     await Microsoft.Maui.ApplicationModel.DataTransfer.Share.Default.RequestAsync(new ShareFileRequest
                     {
                         Title = "Boletim de Qualidade da Água",

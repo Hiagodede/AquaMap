@@ -63,6 +63,14 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Refresh token (hoje o login expira em 8h sem renovação)
 - [ ] `GET /users`: só para admin e sem CPF completo (mascarar)
 - [ ] Política de privacidade + respostas do formulário de Data Safety da Google Play
+- [x] Técnico sem `usesCleartextTraffic`: toda comunicação só por HTTPS (QA 6.1; PR `fix/coordenada-transporte`). Para testar contra uma API local em HTTP no emulador, será preciso liberar o tráfego só no build Debug
+- [x] Leaflet carregado da CDN com `integrity` (SRI) e aviso "mapa indisponível" se não carregar (QA EST-14; PR `fix/coordenada-transporte`). Embarcar o Leaflet no app fica para depois: o mapa depende de internet de qualquer forma, por causa dos blocos do OpenStreetMap
+- [ ] Chave do Google Maps fixa no `AndroidManifest.xml` do Técnico: restringir no console do Google (pacote + SHA-1) ou mover para configuração de build
+- [ ] API: `POST`/`PUT /reservoirs` não validam latitude, longitude e nome (hoje só o app valida). Aplicar as mesmas faixas da coleta e `Trim()` no nome (QA INS-13)
+- [ ] `appsettings.Development.json` dos dois apps aponta para a API de produção: um build Debug grava no banco real (contraria a regra 2). Apontar para staging ou local quando existir
+- [ ] `allowBackup="true"` nos dois apps: no Técnico, o backup do Android leva o SQLite com as coletas. Usar `dataExtractionRules`/`fullBackupContent` excluindo o banco, ou desligar (QA 6.2)
+- [ ] `ApiClientFactory` aceita `BaseUrl` sem HTTPS: recusar em Release
+- [ ] Rascunho da coleta não guarda a localização: `LoadDraft` lê `Draft_Collection_Lat/Lng`, mas `SaveDraft` nunca grava essas chaves. Se o Android encerrar o app, a posição capturada se perde
 
 ## Fase 3 — Arquitetura
 
@@ -96,6 +104,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
   - Recarregar o mapa ao voltar ao app / botão "Atualizar".
   - Mensagem própria para "nenhum reservatório cadastrado".
   - Cores do template (status bar roxa, CID-14).
+- [x] Boletim em PDF no Android (QA INS-05/TEC-11; PR `fix/pdf-android`): o QuestPDF saiu, porque só trazia bibliotecas nativas para Linux. O boletim agora é gerado com o `PdfDocument` do próprio Android. Tem datas locais, números em pt-BR, linhas e valores fora do padrão em vermelho, limites da Portaria vindos do domínio, paginação e nome de arquivo seguro. Verificado no emulador (Android 14, x86_64) com 40 coletas em 2 páginas. Falta conferir num aparelho arm64. Nos outros sistemas (Windows/iOS), o botão mostra o erro amigável
 - [x] M-06: leitura fora da faixa é registrada como alerta, com confirmação; só valores fisicamente impossíveis são recusados (regra 4 do CLAUDE.md; PR `fix/coleta-regras`). Pendente com o SAAE: confirmar no texto da Portaria 888 o limite de pH (9,0 recomendado vs. 9,5 atual) e o recomendado de cloro (≤ 2,0)
 
 ## Fase 5 — Observabilidade e lançamento
@@ -122,3 +131,5 @@ _Agentes: anotem aqui ideias de features novas em vez de implementá-las._
 | Data | Decisão |
 |---|---|
 | 2026-10-04 | `v2` criada a partir de `origin/hiago` + `fix/coleta-ferro-gps-cloro`. `master` congelada na tag `v1.0-estavel` |
+| 2026-10-19 | Distribuição dos APKs pelo site oficial, **não** pela Google Play. Os itens de loja da Fase 5 (AAB, Data Safety, textos e screenshots, exigência de targetSdk) deixam de ser bloqueadores. O `applicationId` só pode mudar antes da primeira distribuição pública, porque um id novo é outro app para o Android e não atualiza o instalado |
+| 2026-10-19 | Coordenadas (QA EST-12): os campos de latitude/longitude são a única fonte. O GPS e o mapa os preenchem, e uma edição manual depois disso é o que vale (`AquaMap/Helpers/CoordinateInput.cs`) |
