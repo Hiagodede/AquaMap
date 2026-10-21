@@ -116,4 +116,67 @@ public class ApiServiceTests
         Assert.False(result.Success);
         Assert.Equal(409, result.StatusCode);
     }
+
+    [Fact]
+    public async Task Update_analysis_sends_only_the_readings()
+    {
+        HttpRequestMessage? sent = null;
+        string? body = null;
+        var api = Api(request =>
+        {
+            sent = request;
+            body = request.Content!.ReadAsStringAsync().Result;
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+
+        var result = await api.UpdateWaterAnalysisAsync(42,
+            new WaterAnalysis { ResidualChlorine = 1.2, Ph = 7.4, Turbidity = 0.8, Iron = 0.05, EColiAbsent = false, ReservoirId = 9 }, "token");
+
+        Assert.True(result.Success);
+        Assert.Equal(HttpMethod.Put, sent!.Method);
+        Assert.Equal("/water-analysis/42", sent.RequestUri!.PathAndQuery);
+        Assert.Equal("Bearer", sent.Headers.Authorization!.Scheme);
+        using var json = System.Text.Json.JsonDocument.Parse(body!);
+        var fields = json.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(5, fields.Count); // no reservoir, date or collection point
+        Assert.Equal("1.2", fields["ResidualChlorine"]);
+        Assert.Equal("7.4", fields["Ph"]);
+        Assert.Equal("0.8", fields["Turbidity"]);
+        Assert.Equal("0.05", fields["Iron"]);
+        Assert.Equal("False", fields["EColiAbsent"]);
+    }
+
+    [Fact]
+    public async Task Update_analysis_rejection_carries_the_api_message()
+    {
+        var result = await Api(HttpStatusCode.BadRequest, "{\"error\":\"pH deve estar entre 0 e 14.\"}")
+            .UpdateWaterAnalysisAsync(42, new WaterAnalysis(), "token");
+
+        Assert.False(result.Success);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("pH deve estar entre 0 e 14.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Delete_analysis_targets_the_single_analysis()
+    {
+        HttpRequestMessage? sent = null;
+        var api = Api(request => { sent = request; return new HttpResponseMessage(HttpStatusCode.NoContent); });
+
+        var result = await api.DeleteWaterAnalysisAsync(42, "token");
+
+        Assert.True(result.Success);
+        Assert.Equal(HttpMethod.Delete, sent!.Method);
+        Assert.Equal("/water-analysis/42", sent.RequestUri!.PathAndQuery);
+        Assert.Equal("Bearer", sent.Headers.Authorization!.Scheme);
+    }
+
+    [Fact]
+    public async Task Delete_analysis_network_failure_has_no_status_code()
+    {
+        var result = await Api(_ => throw new HttpRequestException("sem rede")).DeleteWaterAnalysisAsync(42, "token");
+
+        Assert.False(result.Success);
+        Assert.Null(result.StatusCode);
+    }
 }

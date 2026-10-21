@@ -223,6 +223,21 @@
                                 </VerticalStackLayout>
                             </Grid>
 
+                            <!-- Editar / Excluir a análise (apenas administrador) -->
+                            <HorizontalStackLayout Grid.Row="2" Spacing="8" HorizontalOptions="End"
+                                                   IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ReservoirDetailViewModel}}, Path=IsAdministrator, x:DataType=vm:ReservoirDetailViewModel}">
+                                <Button Text="Editar"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ReservoirDetailViewModel}}, Path=EditAnalysisCommand, x:DataType=vm:ReservoirDetailViewModel}" CommandParameter="{Binding .}"
+                                        SemanticProperties.Hint="Editar os valores desta análise"
+                                        FontSize="13" HeightRequest="44" Padding="16,0" CornerRadius="12"
+                                        TextColor="{AppThemeBinding Light=#0E4F63, Dark=#67E8F9}" BackgroundColor="{AppThemeBinding Light=#ECFEFF, Dark=#164E63}" />
+                                <Button Text="Excluir"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ReservoirDetailViewModel}}, Path=DeleteAnalysisCommand, x:DataType=vm:ReservoirDetailViewModel}" CommandParameter="{Binding .}"
+                                        SemanticProperties.Hint="Excluir esta análise do histórico"
+                                        FontSize="13" HeightRequest="44" Padding="16,0" CornerRadius="12"
+                                        TextColor="#EF4444" BackgroundColor="#FEE2E2" />
+                            </HorizontalStackLayout>
+
                         </Grid>
                     </Border>
                 </DataTemplate>

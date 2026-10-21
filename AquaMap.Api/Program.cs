@@ -235,6 +235,49 @@ app.MapGet("/water-analysis/{reservoirId}", async (AppDbContext db, int reservoi
 })
 .WithName("GetWaterAnalysisByReservoir");
 
+// Corrigir ou remover uma análise lançada errado (ou de teste) é só do Administrador, como excluir reservatório.
+// A edição troca só as leituras: data, reservatório e ponto de coleta são o registro da visita de campo.
+// Cada alteração gera um log de aviso com o id da análise e do usuário.
+app.MapPut("/water-analysis/{id}", async (AppDbContext db, ILogger<Program> logger, int id, WaterAnalysisUpdateRequest request, System.Security.Claims.ClaimsPrincipal currentUser) =>
+{
+    var analysis = await db.WaterAnalyses.FirstOrDefaultAsync(w => w.Id == id);
+    if (analysis is null) return Results.NotFound();
+
+    var physicalError = WaterAnalysisInput.GetPhysicalLimitError(request.ResidualChlorine, request.Ph, request.Turbidity, request.Iron);
+    if (physicalError != null) return Results.BadRequest(new { error = physicalError });
+
+    // Os valores antigos vão para o log: é o único registro do que foi corrigido.
+    var previous = new { analysis.ResidualChlorine, analysis.Ph, analysis.Turbidity, analysis.Iron, analysis.EColiAbsent };
+    analysis.ResidualChlorine = request.ResidualChlorine;
+    analysis.Ph = request.Ph;
+    analysis.Turbidity = request.Turbidity;
+    analysis.Iron = request.Iron;
+    analysis.EColiAbsent = request.EColiAbsent;
+    await db.SaveChangesAsync();
+
+    logger.LogWarning("Análise {AnalysisId} do reservatório {ReservoirId} editada pelo usuário {UserId}. Antes: {Previous}. Depois: {Current}.",
+        id, analysis.ReservoirId, currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, previous, request);
+    return Results.NoContent();
+})
+.WithName("UpdateWaterAnalysis")
+.RequireAuthorization(AuthPolicies.Administrator);
+
+app.MapDelete("/water-analysis/{id}", async (AppDbContext db, ILogger<Program> logger, int id, System.Security.Claims.ClaimsPrincipal currentUser) =>
+{
+    var analysis = await db.WaterAnalyses.FirstOrDefaultAsync(w => w.Id == id);
+    if (analysis is null) return Results.NotFound();
+
+    db.WaterAnalyses.Remove(analysis);
+    await db.SaveChangesAsync();
+
+    logger.LogWarning("Análise {AnalysisId} do reservatório {ReservoirId}, de {AnalysisDate:o}, excluída pelo usuário {UserId}. Valores: cloro {Chlorine}, pH {Ph}, turbidez {Turbidity}, ferro {Iron}, E. coli ausente {EColiAbsent}.",
+        id, analysis.ReservoirId, analysis.AnalysisDate, currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+        analysis.ResidualChlorine, analysis.Ph, analysis.Turbidity, analysis.Iron, analysis.EColiAbsent);
+    return Results.NoContent();
+})
+.WithName("DeleteWaterAnalysis")
+.RequireAuthorization(AuthPolicies.Administrator);
+
 app.MapPost("/users", async (AppDbContext db, CreateUserRequest request, System.Security.Claims.ClaimsPrincipal currentUser) =>
 {
     // Só um Administrador pode criar outro Administrador (o token leva ClaimTypes.Role, ver TokenService).
@@ -384,5 +427,6 @@ static class AuthPolicies
 
 public record LoginRequest(string TaxId, string Password);
 public record ReservoirRequest(string Name, double Latitude, double Longitude, List<string>? NeighborhoodNames = null);
+public record WaterAnalysisUpdateRequest(double ResidualChlorine, double Ph, double Turbidity, double Iron, bool EColiAbsent);
 public record CreateUserRequest(string FullName, string TaxId, DateTime BirthDate, string Address, string PhoneNumber, string Email, string Password, UserType Role);
 

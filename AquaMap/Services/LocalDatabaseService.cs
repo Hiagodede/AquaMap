@@ -92,6 +92,22 @@ namespace AquaMap.Services
             await _database!.DeleteAsync(analysis).ConfigureAwait(false);
         }
 
+        // Mirrors an edit already accepted by the API. Only synced rows: a pending one has no server id yet.
+        public async Task UpdateSyncedAnalysisReadingsAsync(int id, double residualChlorine, double ph, double turbidity, double iron, bool eColiAbsent)
+        {
+            await InitAsync().ConfigureAwait(false);
+            await _database!.ExecuteAsync(
+                "UPDATE LocalWaterAnalysis SET ResidualChlorine = ?, Ph = ?, Turbidity = ?, Iron = ?, EColiAbsent = ? WHERE Id = ? AND IsPendingSync = 0",
+                residualChlorine, ph, turbidity, iron, eColiAbsent, id).ConfigureAwait(false);
+        }
+
+        // Mirrors a deletion already accepted by the API.
+        public async Task DeleteSyncedAnalysisAsync(int id)
+        {
+            await InitAsync().ConfigureAwait(false);
+            await _database!.ExecuteAsync("DELETE FROM LocalWaterAnalysis WHERE Id = ? AND IsPendingSync = 0", id).ConfigureAwait(false);
+        }
+
         // True only if the row still exists (not rejected and deleted) and was accepted by the server.
         public async Task<bool> IsAnalysisSyncedAsync(int localId)
         {

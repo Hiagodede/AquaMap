@@ -118,6 +118,49 @@ public class ApiService
         }
     }
 
+    // Only the readings are sent: the API keeps date, reservoir and collection point as recorded in the field.
+    public async Task<ApiResult> UpdateWaterAnalysisAsync(int id, WaterAnalysis readings, string token)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Put, $"/water-analysis/{id}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Content = JsonContent.Create(new
+            {
+                readings.ResidualChlorine,
+                readings.Ph,
+                readings.Turbidity,
+                readings.Iron,
+                readings.EColiAbsent
+            });
+
+            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+            return await ToResultAsync(response).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erro ao editar análise: {ex.Message}");
+            return new ApiResult(false, null, null);
+        }
+    }
+
+    public async Task<ApiResult> DeleteWaterAnalysisAsync(int id, string token)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"/water-analysis/{id}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+            return await ToResultAsync(response).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erro ao excluir análise: {ex.Message}");
+            return new ApiResult(false, null, null);
+        }
+    }
+
     public async Task<bool> CreateReservoirAsync(string name, double latitude, double longitude, string token, List<string>? neighborhoodNames = null)
     {
         try
