@@ -8,69 +8,101 @@
              Title="{Binding Reservoir.Name}"
              BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#0F172A}">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="16" Padding="20">
-            <Border StrokeShape="RoundRectangle 16" BackgroundColor="#155E75" Stroke="Transparent" Padding="20">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Boletim de Qualidade" FontSize="18" FontAttributes="Bold" TextColor="White" />
-                    <Label Text="Acompanhe a pureza da água da sua região em tempo real." TextColor="#A5F3FC" FontSize="13" />
-                </VerticalStackLayout>
-            </Border>
+    <!-- The header scrolls with the list; outside a StackLayout the EmptyView is shown on Android (QA CID-06). -->
+    <CollectionView ItemsSource="{Binding Analyses}" Margin="20,0">
+        <CollectionView.Header>
+            <VerticalStackLayout Spacing="16" Padding="0,20,0,16">
+                <Border StrokeShape="RoundRectangle 16" BackgroundColor="#155E75" Stroke="Transparent" Padding="20">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Boletim de Qualidade" FontSize="18" FontAttributes="Bold" TextColor="White" />
+                        <Label Text="Resultados das coletas feitas pelo SAAE neste reservatório, comparados com a Portaria GM/MS nº 888/2021."
+                               TextColor="#CFFAFE" FontSize="13" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" />
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#155E75" />
 
-            <CollectionView ItemsSource="{Binding Analyses}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:WaterAnalysis">
-                        <Border StrokeShape="RoundRectangle 16" Margin="0,0,0,16" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}" Stroke="Transparent" Padding="16">
-                            <VerticalStackLayout Spacing="12">
-                                <Label Text="{Binding AnalysisDateLocal, StringFormat='Data da Coleta: {0:dd/MM/yyyy HH:mm}'}" FontSize="12" TextColor="#64748B" FontAttributes="Bold" />
-                                
-                                <Grid ColumnDefinitions="*,*">
-                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="💧 Cloro" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
-                                        <Label Text="{Binding ResidualChlorine, StringFormat='{0:F2} mg/L'}" FontSize="16" TextColor="#0284C7" />
-                                    </VerticalStackLayout>
-                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                        <Label Text="🧪 pH" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
-                                        <Label Text="{Binding Ph, StringFormat='{0:F2}'}" FontSize="16" TextColor="#0284C7" />
-                                    </VerticalStackLayout>
-                                </Grid>
-                                <Grid ColumnDefinitions="*,*">
-                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="🌫️ Turbidez" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
-                                        <Label Text="{Binding Turbidity, StringFormat='{0:F2} NTU'}" FontSize="16" TextColor="#0284C7" />
-                                    </VerticalStackLayout>
-                                    <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                        <Label Text="🦠 E. Coli" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
-                                        <Label FontSize="16">
+                <!-- Erro de carregamento -->
+                <Border IsVisible="{Binding HasError}" StrokeShape="RoundRectangle 12" Stroke="#EF4444" StrokeThickness="1"
+                        Padding="16" BackgroundColor="{AppThemeBinding Light=#FEF2F2, Dark=#1E293B}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{Binding ErrorMessage}" FontSize="13" HorizontalTextAlignment="Center"
+                               TextColor="{AppThemeBinding Light=#B91C1C, Dark=#FCA5A5}" />
+                        <Button Text="Tentar novamente" Command="{Binding ReloadCommand}" BackgroundColor="#155E75"
+                                TextColor="White" CornerRadius="8" HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Situação atual (QA INS-14) -->
+                <Border IsVisible="{Binding HasSituation}" StrokeShape="RoundRectangle 16" Stroke="{Binding StatusColor}"
+                        StrokeThickness="2" Padding="16" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label FontSize="13" TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" Text="Situação atual" />
+                        <Label Text="{Binding StatusText}" FontSize="20" FontAttributes="Bold" TextColor="{Binding StatusColor}" />
+                        <Label Text="{Binding StatusDetail}" FontSize="14" TextColor="{AppThemeBinding Light=#0F172A, Dark=#E2E8F0}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label IsVisible="{Binding HasSituation}" Text="Histórico de coletas" FontSize="15" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" />
+            </VerticalStackLayout>
+        </CollectionView.Header>
+
+        <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="vm:AnalysisItem">
+                <Border StrokeShape="RoundRectangle 16" Margin="0,0,0,16" BackgroundColor="{AppThemeBinding Light=White, Dark=#1E293B}"
+                        Stroke="Transparent" Padding="16">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <Label Text="{Binding Date}" FontSize="12" FontAttributes="Bold" VerticalOptions="Center"
+                                   TextColor="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" />
+                            <Label Grid.Column="1" Text="{Binding StatusText}" FontSize="12" FontAttributes="Bold" VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsPotable}" Value="True">
+                                        <Setter Property="TextColor" Value="{AppThemeBinding Light=#047857, Dark=#6EE7B7}" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsPotable}" Value="False">
+                                        <Setter Property="TextColor" Value="{AppThemeBinding Light=#B91C1C, Dark=#FCA5A5}" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Readings}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:ParameterReading">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <VerticalStackLayout Spacing="0">
+                                            <Label Text="{Binding Name}" FontSize="14" TextColor="{AppThemeBinding Light=#0F172A, Dark=White}" />
+                                            <Label Text="{Binding Standard, StringFormat='Padrão: {0}'}" FontSize="11"
+                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Text="{Binding Value}" FontSize="15" VerticalOptions="Center">
                                             <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding EColiAbsent}" Value="True">
-                                                    <Setter Property="Text" Value="Ausente ✅" />
-                                                    <Setter Property="TextColor" Value="#10B981" />
+                                                <DataTrigger TargetType="Label" Binding="{Binding WithinStandard}" Value="True">
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#0369A1, Dark=#7DD3FC}" />
                                                 </DataTrigger>
-                                                <DataTrigger TargetType="Label" Binding="{Binding EColiAbsent}" Value="False">
-                                                    <Setter Property="Text" Value="Presente ❌" />
-                                                    <Setter Property="TextColor" Value="#EF4444" />
+                                                <!-- Out of standard: red, bold and with a sign, so it does not depend on color alone -->
+                                                <DataTrigger TargetType="Label" Binding="{Binding WithinStandard}" Value="False">
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#B91C1C, Dark=#FCA5A5}" />
+                                                    <Setter Property="FontAttributes" Value="Bold" />
+                                                    <Setter Property="Text" Value="{Binding Value, StringFormat='⚠ {0}'}" />
                                                 </DataTrigger>
                                             </Label.Triggers>
                                         </Label>
-                                    </VerticalStackLayout>
-                                </Grid>
-                                <Grid ColumnDefinitions="*,*">
-                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="🧲 Ferro" FontSize="13" TextColor="#0F172A" FontAttributes="Bold" />
-                                        <Label Text="{Binding Iron, StringFormat='{0:F2} mg/L'}" FontSize="16" TextColor="#0284C7" />
-                                    </VerticalStackLayout>
-                                </Grid>
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-                <CollectionView.EmptyView>
-                    <Label Text="Nenhuma análise encontrada." HorizontalOptions="Center" TextColor="#64748B" />
-                </CollectionView.EmptyView>
-            </CollectionView>
-        </VerticalStackLayout>
-    </ScrollView>
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <CollectionView.EmptyView>
+            <Label IsVisible="{Binding IsEmpty}" Text="Ainda não há coletas registradas para este reservatório."
+                   HorizontalOptions="Center" HorizontalTextAlignment="Center" Margin="0,8"
+                   TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}" />
+        </CollectionView.EmptyView>
+    </CollectionView>
 </ContentPage>
