@@ -166,11 +166,12 @@ public class ApiService
         }
     }
 
-    public async Task<ApiResult> DeleteReservoirAsync(int id, string token)
+    // expectedAnalyses: how many analyses the user confirmed will be deleted; the API answers 409 if it differs.
+    public async Task<ApiResult> DeleteReservoirAsync(int id, int expectedAnalyses, string token)
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Delete, $"/reservoirs/{id}");
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"/reservoirs/{id}?expectedAnalyses={expectedAnalyses}");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _httpClient.SendAsync(request).ConfigureAwait(false);

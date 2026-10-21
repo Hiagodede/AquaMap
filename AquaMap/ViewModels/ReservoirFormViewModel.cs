@@ -50,6 +50,7 @@ namespace AquaMap.ViewModels
     public class ReservoirFormViewModel : INotifyPropertyChanged
     {
         private readonly ApiService _apiService;
+        private readonly LocalDatabaseService _localDbService;
 
         // ── Lista oficial de pontos de coleta do SAAE ──────────────────────────
         private static readonly string[] AllNeighborhoods =
@@ -79,7 +80,7 @@ namespace AquaMap.ViewModels
         public int ReservoirId
         {
             get => _reservoirId;
-            set { _reservoirId = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsEditing)); OnPropertyChanged(nameof(PageTitle)); }
+            set { _reservoirId = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsEditing)); OnPropertyChanged(nameof(PageTitle)); OnPropertyChanged(nameof(CanDelete)); }
         }
 
         private string _reservoirName = string.Empty;
@@ -195,6 +196,13 @@ namespace AquaMap.ViewModels
         public bool IsEditing => ReservoirId > 0;
         public string PageTitle => IsEditing ? "Editar Reservatório" : "Novo Reservatório";
 
+        // Only administrators delete (the API enforces it; this just hides the button for technicians).
+        private bool _isAdministrator;
+        public bool CanDelete => IsEditing && _isAdministrator;
+
+        // Number of analyses deleted along with the reservoir, shown in the confirmation.
+        private int _analysisCount;
+
         // ── Comandos ───────────────────────────────────────────────────────────
         public ICommand SaveCommand { get; }
         public ICommand DeleteCommand { get; }
@@ -202,9 +210,10 @@ namespace AquaMap.ViewModels
         public ICommand ToggleMapPickerCommand { get; }
         public ICommand ToggleManualInputCommand { get; }
 
-        public ReservoirFormViewModel(ApiService apiService)
+        public ReservoirFormViewModel(ApiService apiService, LocalDatabaseService localDbService)
         {
             _apiService = apiService;
+            _localDbService = localDbService;
 
             // Popula lista de bairros
             foreach (var name in AllNeighborhoods)
@@ -241,6 +250,7 @@ namespace AquaMap.ViewModels
 
             if (IsEditing)
             {
+                _ = LoadRoleAsync();
                 _ = LoadReservoirDataAsync();
             }
             else
@@ -351,6 +361,20 @@ namespace AquaMap.ViewModels
             Preferences.Default.Remove("Draft_Reservoir_Longitude");
         }
 
+        private async Task LoadRoleAsync()
+        {
+            try
+            {
+                _isAdministrator = JwtRole.IsAdministrator(await SecureStorage.Default.GetAsync("jwt_token"));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao ler o perfil do usuário: {ex.Message}");
+                _isAdministrator = false;
+            }
+            OnPropertyChanged(nameof(CanDelete));
+        }
+
         private async Task LoadReservoirDataAsync()
         {
             if (ReservoirId <= 0) return;
@@ -379,6 +403,8 @@ namespace AquaMap.ViewModels
                     var existingNames = res.Neighborhoods?.Select(n => n.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
                     foreach (var item in Neighborhoods)
                         item.IsSelected = existingNames.Contains(item.Name);
+
+                    _analysisCount = res.WaterAnalyses?.Count ?? 0;
                 }
             }
             catch (Exception ex)
@@ -476,32 +502,71 @@ namespace AquaMap.ViewModels
 
         private async Task DeleteAsync()
         {
-            if (!IsEditing || IsBusy) return;
+            if (!CanDelete || IsBusy) return;
 
-            bool confirm = await Shell.Current.DisplayAlert("Confirmar", $"Excluir '{ReservoirName}'?", "Sim", "Cancelar");
-            if (!confirm) return;
+            // Without the loaded data the confirmation cannot say how many analyses will be erased.
+            if (_loadFailed)
+            {
+                IsSuccess = false;
+                StatusMessage = "Os dados do reservatório não foram carregados. Volte e abra a edição de novo.";
+                return;
+            }
 
-            var token = await SecureStorage.Default.GetAsync("jwt_token");
-            if (string.IsNullOrEmpty(token)) return;
-
-            IsBusy = true;
             try
             {
-                var result = await _apiService.DeleteReservoirAsync(ReservoirId, token);
-                if (result.Success)
-                    await Shell.Current.GoToAsync("..");
+                if (_analysisCount == 0)
+                {
+                    if (!await Shell.Current.DisplayAlert("Excluir reservatório",
+                            $"Excluir '{ReservoirName}'? Essa ação não pode ser desfeita.", "Excluir", "Cancelar"))
+                        return;
+                }
+                else
+                {
+                    var analyses = _analysisCount == 1 ? "1 análise registrada" : $"{_analysisCount} análises registradas";
+                    if (!await Shell.Current.DisplayAlert("Excluir reservatório e análises",
+                            $"Excluir '{ReservoirName}' apaga também {analyses} dele. O histórico de qualidade da água desse reservatório será perdido.",
+                            "Continuar", "Cancelar"))
+                        return;
+                    if (!await Shell.Current.DisplayAlert("Tem certeza?",
+                            $"'{ReservoirName}' e {analyses} serão apagados definitivamente. Essa ação não pode ser desfeita.",
+                            "Excluir tudo", "Cancelar"))
+                        return;
+                }
+
+                var token = await SecureStorage.Default.GetAsync("jwt_token");
+                if (string.IsNullOrEmpty(token))
+                {
+                    IsSuccess = false;
+                    StatusMessage = "Sessão expirada. Faça login novamente.";
+                    return;
+                }
+
+                IsBusy = true;
+                var result = await _apiService.DeleteReservoirAsync(ReservoirId, _analysisCount, token);
+                // 404: someone else already deleted it; either way it is gone.
+                if (result.Success || result.StatusCode == 404)
+                {
+                    await _localDbService.DeleteReservoirAsync(ReservoirId);
+                    // Back to the map: the detail page underneath shows the reservoir that no longer exists.
+                    await Shell.Current.GoToAsync("../..");
+                }
                 else
                 {
                     IsSuccess = false;
-                    StatusMessage = result.StatusCode == 409
-                        ? "Não é possível excluir: o reservatório possui análises registradas."
-                        : "Erro ao excluir reservatório.";
+                    StatusMessage = result.StatusCode switch
+                    {
+                        401 => "Sessão expirada. Faça login novamente.",
+                        403 => "Apenas administradores podem excluir reservatórios.",
+                        409 => "Novas análises foram registradas neste reservatório. Nada foi excluído. Volte e abra a edição de novo para conferir.",
+                        _ => "Erro ao excluir reservatório. Verifique a conexão e tente de novo."
+                    };
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Erro ao excluir reservatório: {ex.Message}");
                 IsSuccess = false;
-                StatusMessage = $"Erro de conexão: {ex.Message}";
+                StatusMessage = "Não foi possível excluir o reservatório. Verifique a conexão e tente de novo.";
             }
             finally
             {

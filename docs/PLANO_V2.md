@@ -42,6 +42,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 **Testes**
 - [x] `tests/AquaMap.Domain.Tests` (xUnit): cobertura completa das faixas da Portaria 888, incluindo os limites (0,2 / 5,0 / 6,0 / 9,5 / 5,0 / 0,3) (PR `fix/coleta-regras`; ainda falta rodar no CI)
 - [ ] `tests/AquaMap.Api.Tests`: `WebApplicationFactory` + **Testcontainers (PostgreSQL real)**, cobrindo login, CRUD e as regras de autorização
+  - [x] Projeto criado com `WebApplicationFactory` e banco **em memória** (não há Docker na máquina de desenvolvimento), cobrindo a exclusão de reservatório (PR `fix/exclusao-reservatorio-admin`). Falta trocar por Testcontainers e cobrir login e o restante do CRUD
 - [ ] Testes do `SyncService` / `LocalWaterAnalysis` (mapeamento de todos os campos na sincronização)
   - [x] `LocalWaterAnalysis`: ida e volta cache ↔ domínio cobre todos os campos (`tests/AquaMap.Tecnico.Tests`, PR `fix/status-mapa`)
   - [ ] `SyncService` (depende de abstrair `SecureStorage`/`Connectivity`)
@@ -57,6 +58,9 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 
 - [ ] Modelo de papéis definido com o SAAE (proposta: `Citizen`, `Technician`, `Administrator`) + migration que converte os técnicos gravados como `Citizen`
 - [ ] Policies de autorização por endpoint (quem cria, edita e exclui reservatórios, usuários e análises)
+  - [x] Excluir reservatório: só Administrador (policy `Administrator`). A exclusão leva junto as análises e os bairros, com confirmação dupla no app informando quantas análises serão apagadas. Decisão do dono do projeto que substitui o bloqueio 409 do B-04 (PR `fix/exclusao-reservatorio-admin`). Cada exclusão gera um log de aviso com o id do reservatório, o número de análises e o id do usuário
+    - Com análises, a API só exclui se o app informar quantas foram confirmadas (`?expectedAnalyses=N`), senão responde 409. Isso protege o app antigo, que tem confirmação simples
+    - Fica de fora: (a) conferir o backup/PITR do PostgreSQL do Render antes do deploy (a exclusão é definitiva); (b) uma coleta pendente de um reservatório excluído só sai da fila numa sincronização interativa; (c) janela de milissegundos entre a contagem e a exclusão, que pode ser fechada com uma transação `Serializable`
 - [ ] Rate limiting no `/login` + bloqueio progressivo
 - [ ] Remover o seed `admin123` de produção. Primeiro admin criado por comando/variável de ambiente única
 - [ ] `RequireHttpsMetadata = true` fora de Development. Chave JWT em UTF-8 com tamanho mínimo validado

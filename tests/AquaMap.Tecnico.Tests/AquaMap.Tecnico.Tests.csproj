@@ -23,6 +23,7 @@
   <ItemGroup>
     <Compile Include="..\..\AquaMap\Models\LocalEntities.cs" Link="Linked\LocalEntities.cs" />
     <Compile Include="..\..\AquaMap.Client.Shared\ApiService.cs" Link="Linked\ApiService.cs" />
+    <Compile Include="..\..\AquaMap\Helpers\JwtRole.cs" Link="Linked\JwtRole.cs" />
     <Compile Include="..\..\AquaMap\Services\WaterReport.cs" Link="Linked\WaterReport.cs" />
     <Compile Include="..\..\AquaMap\Helpers\CoordinateInput.cs" Link="Linked\CoordinateInput.cs" />
   </ItemGroup>

@@ -91,4 +91,29 @@ public class ApiServiceTests
         Assert.False(result.Success);
         Assert.Null(result.StatusCode);
     }
+
+    // The API only deletes a reservoir with analyses when the client confirms how many will go.
+    [Fact]
+    public async Task Delete_reservoir_sends_the_confirmed_analysis_count()
+    {
+        HttpRequestMessage? sent = null;
+        var api = Api(request => { sent = request; return new HttpResponseMessage(HttpStatusCode.NoContent); });
+
+        var result = await api.DeleteReservoirAsync(7, 3, "token");
+
+        Assert.True(result.Success);
+        Assert.Equal(HttpMethod.Delete, sent!.Method);
+        Assert.Equal("/reservoirs/7?expectedAnalyses=3", sent.RequestUri!.PathAndQuery);
+        Assert.Equal("Bearer", sent.Headers.Authorization!.Scheme);
+    }
+
+    [Fact]
+    public async Task Delete_reservoir_conflict_is_reported_with_its_status()
+    {
+        var result = await Api(HttpStatusCode.Conflict, "{\"error\":\"O reservatório possui análises registradas que não foram confirmadas para exclusão.\"}")
+            .DeleteReservoirAsync(7, 1, "token");
+
+        Assert.False(result.Success);
+        Assert.Equal(409, result.StatusCode);
+    }
 }
