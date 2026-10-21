@@ -5,6 +5,16 @@ on:
   push:
     branches: [master, hiago]
 
+# Needed to create the Release that the website download links point to.
+permissions:
+  contents: write
+
+# One build per branch at a time: a newer push cancels the running one. Without this, two merges close together
+# run in parallel and the older build can finish last, making the OLDER version the "latest" Release.
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: windows-latest
@@ -45,3 +55,28 @@ jobs:
         with:
           name: aquamap-apks
           path: out/**/*-Signed.apk
+
+      # ---- Download on the website (master only) ----
+      # Fixed file names keep https://github.com/Hiagodede/AquaMap/releases/latest/download/<name> stable forever.
+      # Do NOT rename these files: the links on the website would break.
+      - name: Renomear APKs com nome fixo
+        if: github.ref == 'refs/heads/master'
+        shell: pwsh
+        run: |
+          $tecnico = Get-ChildItem out/tecnico -Filter *-Signed.apk | Select-Object -First 1
+          $cidadao = Get-ChildItem out/cidadao -Filter *-Signed.apk | Select-Object -First 1
+          if (-not $tecnico -or -not $cidadao) { Write-Error "APK assinado não encontrado."; exit 1 }
+          Copy-Item $tecnico.FullName aquamap-tecnico.apk
+          Copy-Item $cidadao.FullName aquamap-cidadao.apk
+
+      - name: Publicar Release
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: AquaMap 1.0.${{ github.run_number }}
+          body: APKs gerados automaticamente a partir do commit ${{ github.sha }}.
+          files: |
+            aquamap-tecnico.apk
+            aquamap-cidadao.apk
+          make_latest: true
