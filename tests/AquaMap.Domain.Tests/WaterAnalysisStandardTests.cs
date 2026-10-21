@@ -2,7 +2,7 @@ using AquaMap.Domain.Entities;
 
 namespace AquaMap.Domain.Tests;
 
-// Portaria GM/MS 888/2021 limits as currently configured (CLAUDE.md, rule 3). Values unchanged by this PR.
+// Portaria GM/MS 888/2021 limits as currently configured (single source: the domain). Values unchanged by this PR.
 public class WaterAnalysisStandardTests
 {
     private static WaterAnalysis Potable() => new()

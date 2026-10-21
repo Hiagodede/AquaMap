@@ -1,6 +1,6 @@
 # AquaMap — Arquitetura Técnica
 
-Este documento descreve **como o sistema é construído hoje**, com base em leitura direta do código (não é um plano ou aspiração — para isso veja `ROADMAP_PRODUCAO.md`; para uma avaliação crítica do estado atual, com bugs e dívidas técnicas, veja `HANDOFF.md`).
+Este documento descreve **como o sistema é construído hoje**, com base em leitura direta do código (não é um plano ou aspiração).
 
 ## 1. Visão Geral dos Componentes
 
@@ -39,7 +39,7 @@ Deploy atual: API em Render.com (`https://aquamap-g0at.onrender.com`), banco Pos
 ### Entidades
 
 - **`User`** — `Id (Guid)`, `FullName`, `TaxId` (CPF, único), `BirthDate`, `Address`, `PhoneNumber`, `Email`, `PasswordHash` (BCrypt), `Role (UserType)`. Todos os setters são privados; só é possível construir via construtor.
-  - `enum UserType { Citizen = 0, Administrator = 1 }` — **só existem esses dois valores** (não há `Technician`; veja a nota em HANDOFF.md sobre a confusão de nomenclatura que isso causa).
+  - `enum UserType { Citizen = 0, Administrator = 1 }` — **só existem esses dois valores** (não há `Technician`: os técnicos são gravados como `Citizen`).
 - **`Reservoir`** — `Id`, `Name`, `Latitude`, `Longitude`, coleção de `Neighborhood` (1:N) e `WaterAnalysis` (1:N). `StatusColor` é calculado: `"Gray"` sem análises, `"Green"`/`"Red"` conforme `IsPotable` da análise mais recente.
 - **`Neighborhood`** — bairro atendido por um reservatório (`ReservoirId` FK). Relação 1:N simples.
 - **`WaterAnalysis`** — uma coleta/análise: `AnalysisDate`, `ResidualChlorine`, `Ph`, `Turbidity`, `EColiAbsent`, `Iron`, `CollectionLatitude`/`CollectionLongitude` (nullable), `IsPendingSync`, `ReservoirId` FK.
@@ -54,7 +54,7 @@ Deploy atual: API em Render.com (`https://aquamap-g0at.onrender.com`), banco Pos
 | Ferro | `x ≤ 0.3` mg/L |
 | E. coli | ausente |
 
-`IsPotable` exige todos os parâmetros válidos **e** ausência de E. coli. Essa é a regra canônica — a API e o domínio a seguem; **o formulário de coleta no app técnico usa uma faixa "ideal" de cloro diferente (0.2–2.0) e isso causa um bug real**, detalhado em HANDOFF.md.
+`IsPotable` exige todos os parâmetros válidos **e** ausência de E. coli. Essa é a regra canônica, e as faixas existem só no domínio (`WaterAnalysis`): a API, os dois apps e o boletim em PDF consomem essas propriedades. Uma leitura fora do padrão é registrada como alerta; só valores fisicamente impossíveis são recusados.
 
 ## 3. Infraestrutura e Dados (`AquaMap.Infrastructure`)
 
@@ -83,8 +83,7 @@ Minimal APIs, tudo definido em `Program.cs` (sem controllers). Autenticação: J
 | `/users/{id}` | DELETE | JWT | Remove usuário |
 | `/metrics` | GET | JWT | Métricas agregadas (não consumido por nenhum client hoje — os apps calculam as métricas localmente) |
 
-**Importante:** `RequireAuthorization()` exige apenas um JWT válido — não há checagem de `Role`/policy em nenhuma rota. Qualquer usuário autenticado (mesmo `Citizen`) pode chamar rotas administrativas. Detalhado como risco de segurança em HANDOFF.md.
-
+**Importante:** `RequireAuthorization()` exige apenas um JWT válido — não há checagem de `Role`/policy em nenhuma rota. Qualquer usuário autenticado (mesmo `Citizen`) pode chamar rotas administrativas.
 Um usuário administrador padrão (`000.000.000-00` / `admin123`) é criado automaticamente se a tabela `Users` estiver vazia no startup.
 
 ## 5. Client compartilhado (`AquaMap.Client.Shared`)

@@ -40,7 +40,7 @@ namespace AquaMap.Models
         [Indexed]
         public bool IsPendingSync { get; set; }
 
-        // Portaria 888 rules live only in the domain (CLAUDE.md, rule 3).
+        // Portaria 888 rules live only in the domain (single source: the domain).
         [Ignore]
         public bool IsChlorineValid => WaterAnalysis.IsChlorineWithinStandard(ResidualChlorine);
 

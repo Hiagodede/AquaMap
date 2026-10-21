@@ -4,7 +4,6 @@ Sistema cliente-servidor para monitoramento da qualidade da água do SAAE Alegre
 
 > Documentação completa: este README cobre visão geral e como rodar o projeto.
 > Para arquitetura técnica detalhada (fluxo de dados, autenticação, sincronização offline), veja **[ARCHITECTURE.md](ARCHITECTURE.md)**.
-> Para o estado atual real do projeto — o que funciona, bugs conhecidos, dívidas técnicas e prioridades para quem assumir — veja **[HANDOFF.md](HANDOFF.md)**. Leia esse documento antes de começar a mexer no código.
 > Para testar os apps no Visual Studio (Windows, emulador Android ou celular físico, com geração de .apk) — veja **[MANUAL_TECNICO_TI_CINETICA.md](MANUAL_TECNICO_TI_CINETICA.md)**.
 
 ## 1. Visão Geral
@@ -24,12 +23,12 @@ Ambos consomem a mesma **AquaMap.Api**, hospedada atualmente em produção em `h
  ├── 📂 AquaMap.Public          # App Cidadão (MAUI) — leitura pública, sem login, sempre online
  ├── 📂 AquaMap.Client.Shared   # HTTP client (ApiService) compartilhado pelos dois apps acima
  ├── 📂 AquaMap.Domain          # Entidades e regras de negócio puras (User, Reservoir, Neighborhood, WaterAnalysis)
- ├── 📂 AquaMap.Application     # Camada de casos de uso — projeto reservado, ainda vazio (ver HANDOFF.md)
+ ├── 📂 AquaMap.Application     # Camada de casos de uso — projeto reservado, ainda vazio
  ├── 📂 AquaMap.Infrastructure  # EF Core + AppDbContext + Migrations (PostgreSQL)
  └── 📂 AquaMap.Api             # Backend .NET (Minimal APIs) — autenticação JWT, endpoints REST
 ```
 
-Não existe projeto de testes automatizados na solution — veja **HANDOFF.md** para esse e outros gaps.
+Os testes automatizados ficam em `tests/` (domínio, app técnico e API) e rodam com `dotnet test`.
 
 ## 3. Tecnologias Principais
 
@@ -37,7 +36,7 @@ Não existe projeto de testes automatizados na solution — veja **HANDOFF.md** 
 - **PostgreSQL** + **Entity Framework Core** (Code-First, migrations em `AquaMap.Infrastructure/Migrations`)
 - **JWT Bearer** para autenticação do app técnico
 - **SQLite** (`sqlite-net-pcl`) local no app técnico, para cache offline-first
-- **QuestPDF** para geração de boletins em PDF
+- **PdfDocument do Android** para geração de boletins em PDF
 - **Leaflet.js + OpenStreetMap** (via `WebView`) para os mapas e o seletor de localização por toque
 - **MVVM** como padrão de UI nos dois apps
 
@@ -54,7 +53,7 @@ Mais rápido para testar a UI — os dois apps já vêm configurados (inclusive 
 
 Login de técnico padrão (seed automático, ver §4.2): CPF `000.000.000-00`, senha `admin123`.
 
-> ⚠️ Como o app aponta para produção mesmo em Debug, qualquer cadastro/coleta feito localmente durante o desenvolvimento vai parar no banco real. Veja o alerta correspondente em **HANDOFF.md**.
+> ⚠️ Como o app aponta para produção mesmo em Debug, qualquer cadastro/coleta feito localmente durante o desenvolvimento vai parar no banco real.
 
 ### 4.2 API + banco local (para desenvolver o backend)
 

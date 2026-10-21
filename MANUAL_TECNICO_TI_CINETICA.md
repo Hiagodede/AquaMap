@@ -2,7 +2,7 @@
 
 Este manual explica, passo a passo, como pegar o código do AquaMap, abrir no Visual Studio, rodar os dois apps (Técnico e Cidadão) num computador Windows ou num emulador Android, e como gerar um instalável (.apk) para testar num celular Android real.
 
-Não é preciso instalar nem configurar nenhum servidor/banco de dados para esses testes — os dois apps já vêm configurados para conversar com a API que está rodando online (gratuita, no Render.com), do mesmo jeito que vai funcionar quando o app estiver em uso real. Detalhes de arquitetura estão em `ARCHITECTURE.md`; o estado atual do projeto, incluindo bugs conhecidos, está em `HANDOFF.md` — vale ler antes de testar, para saber o que já é esperado dar errado.
+Não é preciso instalar nem configurar nenhum servidor/banco de dados para esses testes — os dois apps já vêm configurados para conversar com a API que está rodando online (gratuita, no Render.com), do mesmo jeito que vai funcionar quando o app estiver em uso real. Detalhes de arquitetura estão em `ARCHITECTURE.md`.
 
 ---
 
@@ -94,7 +94,7 @@ Use esse caminho se quiser distribuir o app para alguém testar sem precisar con
 - Cadastrar um reservatório novo.
 - Registrar uma coleta: testar os três jeitos de definir localização — captura por GPS, toque no mapa, e digitação manual de lat/lng.
 - Abrir o detalhe de um reservatório com histórico e exportar o boletim em **PDF**.
-- Ativar o modo avião, tentar registrar uma coleta offline, reconectar e conferir se ela sincroniza (ver aviso sobre perda de Ferro/GPS na sincronização em `HANDOFF.md`, item 3).
+- Ativar o modo avião, tentar registrar uma coleta offline, reconectar e conferir se ela sincroniza, com todos os valores (inclusive ferro e localização).
 
 **App Cidadão (`AquaMap.Public`)**
 - Abrir sem login, conferir o mapa com a legenda nova.
@@ -102,7 +102,7 @@ Use esse caminho se quiser distribuir o app para alguém testar sem precisar con
 
 ## 8. Problemas comuns
 
-- **App Cidadão fecha sozinho ao abrir o `.exe` direto pela pasta `bin/`, fora do Visual Studio**: isso é uma falha conhecida de empacotamento ao rodar o executável bruto no Windows (detalhada em `HANDOFF.md`). Sempre testem rodando via **F5 no Visual Studio** (§4), não clicando duas vezes no `.exe`.
+- **App Cidadão fecha sozinho ao abrir o `.exe` direto pela pasta `bin/`, fora do Visual Studio**: isso é uma falha conhecida de empacotamento ao rodar o executável bruto no Windows. Sempre testem rodando via **F5 no Visual Studio** (§4), não clicando duas vezes no `.exe`.
 - **Tela de login não entra / dados não carregam**: confirme que o dispositivo tem internet — a API é online, não há modo totalmente offline no app Cidadão, e o app Técnico só funciona offline para dados já carregados anteriormente.
 - **"Sessão expirada" no app Técnico**: o token de login dura 8 horas; basta fazer login de novo.
 - **Emulador Android muito lento para abrir**: normal na primeira execução; se persistir, verifique se a virtualização (Hyper-V/HAXM) está habilitada no BIOS do computador — o próprio instalador do Visual Studio avisa se faltar algum pré-requisito.
@@ -111,4 +111,3 @@ Use esse caminho se quiser distribuir o app para alguém testar sem precisar con
 
 - **`README.md`** — visão geral do projeto e como rodar o backend localmente (só necessário se forem mexer na API, não para os testes deste manual).
 - **`ARCHITECTURE.md`** — como o sistema é construído por dentro.
-- **`HANDOFF.md`** — o que funciona, bugs conhecidos e prioridades — leitura recomendada antes de reportar um comportamento estranho como "bug novo", pode já ser um problema conhecido.
