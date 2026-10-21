@@ -90,6 +90,7 @@ Ordem obrigatória (ver `RELATORIO_CORRECOES.md` §3) para não perder Ferro/GPS
 - [ ] Acessibilidade: `SemanticProperties`, contraste AA, fonte dinâmica, alvos de toque ≥ 48dp, status da água não depender só de cor
 - [ ] App Cidadão: linguagem simples ("Água própria para consumo"), explicação de cada parâmetro, data da última coleta em destaque
 - [ ] App Técnico: fluxo de coleta em poucos toques, indicador claro de pendências de sincronização
+- [x] Boletim em PDF no Android (QA INS-05/TEC-11; PR `fix/pdf-android`): o QuestPDF saiu, porque só trazia bibliotecas nativas para Linux. O boletim agora é gerado com o `PdfDocument` do próprio Android. Tem datas locais, números em pt-BR, linhas e valores fora do padrão em vermelho, limites da Portaria vindos do domínio, paginação e nome de arquivo seguro. Verificado no emulador (Android 14, x86_64) com 40 coletas em 2 páginas. Falta conferir num aparelho arm64. Nos outros sistemas (Windows/iOS), o botão mostra o erro amigável
 - [x] M-06: leitura fora da faixa é registrada como alerta, com confirmação; só valores fisicamente impossíveis são recusados (regra 4 do CLAUDE.md; PR `fix/coleta-regras`). Pendente com o SAAE: confirmar no texto da Portaria 888 o limite de pH (9,0 recomendado vs. 9,5 atual) e o recomendado de cloro (≤ 2,0)
 
 ## Fase 5 — Observabilidade e lançamento
