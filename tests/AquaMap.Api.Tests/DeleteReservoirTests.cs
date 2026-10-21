@@ -89,7 +89,7 @@ public class DeleteReservoirTests : IClassFixture<ApiFactory>
         Assert.Equal(2, await _factory.WithDbAsync(db => db.WaterAnalyses.CountAsync(w => w.ReservoirId == id)));
     }
 
-    // Technicians are stored as UserType.Citizen until the Technician role exists (PLANO_V2, Fase 2).
+    // Technicians are stored as UserType.Citizen until the Technician role exists.
     [Fact]
     public async Task Technician_cannot_delete_a_reservoir()
     {

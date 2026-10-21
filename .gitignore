@@ -362,14 +362,52 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# Environment secrets
-.env
-
-# Claude Code: CLAUDE.md, .claude/agents and .claude/settings.json are shared team
-# config and ARE versioned; only personal/local files are ignored.
-.claude/settings.local.json
-.claude/worktrees/
-CLAUDE.local.md
-
 # graphify generated knowledge graph (local cache, regenerate with `graphify update .`)
 graphify-out/
+
+# =====================================================================
+# AquaMap: o repositório é PÚBLICO. Nada abaixo pode ser versionado.
+# =====================================================================
+
+# Segredos e credenciais (usar variáveis de ambiente / secrets do GitHub e do Render)
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.*.local.json
+appsettings.Local.json
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.cer
+*.crt
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# Bancos de dados e backups locais (podem conter dados pessoais: LGPD)
+*.db
+*.db3
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+*.bak
+
+# APKs e pacotes gerados (são publicados pelas Releases do GitHub)
+*.apk
+*.aab
+
+# Documentação interna, resultados de QA e configuração de agentes de IA (ficam só na máquina)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+TESTES/
+RELATORIO_CORRECOES.md
+HANDOFF.md
+ROADMAP_PRODUCAO.md
+docs/PLANO_V2.md
