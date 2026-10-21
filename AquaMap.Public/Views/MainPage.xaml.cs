@@ -68,13 +68,18 @@ namespace AquaMap.Public.Views
                         nText = string.Join(", ", allNeighborhoods.Take(3)) + $" e mais {allNeighborhoods.Count - 3}";
                 }
 
+                // Status, its text and the last collection date come from the domain, already formatted (QA CID-07).
+                var latest = WaterQuality.Latest(r.WaterAnalyses);
+                var status = WaterQuality.Evaluate(latest);
                 return new
                 {
                     id = r.Id,
                     lat = r.Latitude,
                     lng = r.Longitude,
-                    name = r.Name ?? "Reservatório",
-                    status = GetStatusForReservoir(r),
+                    name = (r.Name ?? "Reservatório").Trim(),
+                    status = status switch { WaterStatus.Potable => "ok", WaterStatus.Alert => "alert", _ => "nodata" },
+                    statusText = WaterQuality.StatusText(status),
+                    lastCollection = WaterQuality.LastCollectionDate(latest),
                     neighborhoods = nText
                 };
             }).ToList();
@@ -85,8 +90,9 @@ namespace AquaMap.Public.Views
 <html>
 <head>
     <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
-    <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
-    <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+    <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=' crossorigin='' />
+    <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js' integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=' crossorigin=''></script>
+    <script>if (typeof L === 'undefined') {{ document.addEventListener('DOMContentLoaded', function () {{ document.body.innerHTML = ""<p style='font-family:sans-serif;padding:24px;text-align:center;color:#475569'>Não foi possível carregar o mapa. Verifique a conexão e tente novamente.</p>""; }}); }}</script>
     <style>
         * {{ box-sizing: border-box; }}
         body, html {{ padding: 0; margin: 0; height: 100%; width: 100%; overflow: hidden; }}
@@ -146,8 +152,29 @@ namespace AquaMap.Public.Views
             }});
         }}
 
+        // Reservoirs at the same coordinates used to stack into a single visible pin (QA INS-21):
+        // spread them on a small circle (~15 m) so each one can be tapped.
+        var byPosition = {{}};
         markers.forEach(function(m) {{
-            
+            var key = Number(m.lat).toFixed(5) + ',' + Number(m.lng).toFixed(5);
+            (byPosition[key] = byPosition[key] || []).push(m);
+        }});
+        Object.keys(byPosition).forEach(function(key) {{
+            var group = byPosition[key];
+            if (group.length < 2) return;
+            group.forEach(function(m, i) {{
+                var angle = 2 * Math.PI * i / group.length;
+                m.lat = Number(m.lat) + 0.00014 * Math.sin(angle);
+                m.lng = Number(m.lng) + 0.00014 * Math.cos(angle);
+            }});
+        }});
+
+        // The back button closes an open popup before leaving the app (QA CID-13).
+        map.on('popupopen', function() {{ window.location.href = 'aquamap://popup/open'; }});
+        map.on('popupclose', function() {{ window.location.href = 'aquamap://popup/close'; }});
+
+        markers.forEach(function(m) {{
+
             // GAP 4: Zonas críticas no mapa por bairro (área de risco)
             if (m.status === 'alert') {{
                 L.circle([m.lat, m.lng], {{
@@ -175,9 +202,16 @@ namespace AquaMap.Public.Views
                 iconAnchor: [14, 14]
             }});
 
-            var marker = L.marker([m.lat, m.lng], {{ icon: customIcon }}).addTo(map);
-            
+            // title/alt: screen readers announced only the question mark (QA CID-08).
+            var label = m.name + ' — ' + m.statusText;
+            var marker = L.marker([m.lat, m.lng], {{ icon: customIcon, title: label, alt: label }}).addTo(map);
+
+            var statusColor = m.status === 'ok' ? '#047857' : (m.status === 'alert' ? '#B91C1C' : '#B45309');
             var popUpText = '<b style=""font-size:14px"">' + esc(m.name) + '</b>';
+            popUpText += '<br><span style=""color:' + statusColor + ';font-size:13px;font-weight:bold"">' + esc(m.statusText) + '</span>';
+            if (m.lastCollection) {{
+                popUpText += '<br><span style=""color:#475569;font-size:11px"">Última coleta: ' + esc(m.lastCollection) + '</span>';
+            }}
             if (m.neighborhoods) {{
                 popUpText += '<br><span style=""color:#64748B;font-size:11px"">Bairros: ' + esc(m.neighborhoods) + '</span>';
             }}
@@ -198,7 +232,12 @@ namespace AquaMap.Public.Views
         {
             try
             {
-                if (e.Url.StartsWith("aquamap://details/"))
+                if (e.Url.StartsWith("aquamap://popup/"))
+                {
+                    e.Cancel = true;
+                    _isPopupOpen = e.Url.EndsWith("/open", StringComparison.Ordinal);
+                }
+                else if (e.Url.StartsWith("aquamap://details/"))
                 {
                     e.Cancel = true;
                     // Repeated taps used to stack several detail pages (QA CID-09).
@@ -246,11 +285,27 @@ namespace AquaMap.Public.Views
             }
         }
 
-        private string GetStatusForReservoir(Reservoir r)
+        private bool _isPopupOpen;
+
+        // With a popup open, "back" closes it instead of leaving the app (QA CID-13).
+        protected override bool OnBackButtonPressed()
         {
-            if (r.WaterAnalyses == null || !r.WaterAnalyses.Any()) return "nodata";
-            var last = r.WaterAnalyses.OrderByDescending(x => x.AnalysisDate).First();
-            return last.IsPotable ? "ok" : "alert";
+            if (!_isPopupOpen) return base.OnBackButtonPressed();
+            _isPopupOpen = false;
+            _ = ClosePopupAsync();
+            return true;
+        }
+
+        private async Task ClosePopupAsync()
+        {
+            try
+            {
+                await ReservoirMapWebView.EvaluateJavaScriptAsync("map.closePopup();");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao fechar o popup do mapa: {ex}");
+            }
         }
 
         // Alerta que nunca lança (usado dentro de catch de handlers async void).
