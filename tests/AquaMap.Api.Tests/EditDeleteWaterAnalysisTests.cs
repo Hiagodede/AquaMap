@@ -102,6 +102,23 @@ public class EditDeleteWaterAnalysisTests : IClassFixture<ApiFactory>
         Assert.Equal(7.0, (await FindAsync(ids[0]))!.Ph);
     }
 
+    // A missing field used to become 0/false: no E. coli field recorded "present", no iron hid an alert.
+    [Fact]
+    public async Task Editing_with_a_missing_reading_is_rejected()
+    {
+        var (_, ids) = await SeedAsync(analyses: 1);
+        var token = await _factory.TokenForAsync(UserType.Administrator);
+
+        var withoutEColi = await SendAsync(HttpMethod.Put, ids[0], token, new { ResidualChlorine = 1.2, Ph = 7.4, Turbidity = 0.8, Iron = 0.05 });
+        var withoutIron = await SendAsync(HttpMethod.Put, ids[0], token, new { ResidualChlorine = 1.2, Ph = 7.4, Turbidity = 0.8, EColiAbsent = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, withoutEColi.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, withoutIron.StatusCode);
+        var saved = await FindAsync(ids[0]);
+        Assert.True(saved!.EColiAbsent);
+        Assert.Equal(0.2, saved.Iron);
+    }
+
     [Fact]
     public async Task Editing_a_missing_analysis_returns_not_found()
     {
@@ -130,6 +147,7 @@ public class EditDeleteWaterAnalysisTests : IClassFixture<ApiFactory>
         var response = await SendAsync(HttpMethod.Put, ids[0], token: null, ValidReading);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(1.5, (await FindAsync(ids[0]))!.ResidualChlorine);
     }
 
     [Fact]

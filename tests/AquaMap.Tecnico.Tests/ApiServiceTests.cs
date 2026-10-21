@@ -121,16 +121,11 @@ public class ApiServiceTests
     public async Task Update_analysis_sends_only_the_readings()
     {
         HttpRequestMessage? sent = null;
-        string? body = null;
-        var api = Api(request =>
-        {
-            sent = request;
-            body = request.Content!.ReadAsStringAsync().Result;
-            return new HttpResponseMessage(HttpStatusCode.NoContent);
-        });
+        var api = Api(request => { sent = request; return new HttpResponseMessage(HttpStatusCode.NoContent); });
 
         var result = await api.UpdateWaterAnalysisAsync(42,
             new WaterAnalysis { ResidualChlorine = 1.2, Ph = 7.4, Turbidity = 0.8, Iron = 0.05, EColiAbsent = false, ReservoirId = 9 }, "token");
+        var body = await sent!.Content!.ReadAsStringAsync();
 
         Assert.True(result.Success);
         Assert.Equal(HttpMethod.Put, sent!.Method);

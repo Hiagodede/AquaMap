@@ -166,8 +166,16 @@ namespace AquaMap.ViewModels
                 var result = await _apiService.UpdateWaterAnalysisAsync(_analysisId, reading, token);
                 if (result.Success)
                 {
-                    await _localDbService.UpdateSyncedAnalysisReadingsAsync(_analysisId,
-                        reading.ResidualChlorine, reading.Ph, reading.Turbidity, reading.Iron, reading.EColiAbsent);
+                    // The server already has the edit; a cache failure is fixed when the history is fetched again.
+                    try
+                    {
+                        await _localDbService.UpdateSyncedAnalysisReadingsAsync(_analysisId,
+                            reading.ResidualChlorine, reading.Ph, reading.Turbidity, reading.Iron, reading.EColiAbsent);
+                    }
+                    catch (Exception cacheEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Erro ao atualizar o cache da análise: {cacheEx}");
+                    }
                     IsSuccess = true;
                     StatusMessage = "Análise atualizada!";
                     try { Microsoft.Maui.Devices.HapticFeedback.Default.Perform(Microsoft.Maui.Devices.HapticFeedbackType.Click); } catch { }

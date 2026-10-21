@@ -235,11 +235,16 @@ namespace AquaMap.ViewModels
         }
 
         // A collection still queued on this device has no server id: it can only be changed after it syncs.
+        // A just-synced one also has no id until the history is fetched again (SyncService does not store it).
         private static async Task<bool> EnsureSyncedAsync(WaterAnalysis analysis)
         {
             if (!analysis.IsPendingSync && analysis.Id > 0) return true;
-            await Shell.Current.DisplayAlert("Análise ainda não enviada",
-                "Esta coleta ainda está salva só no aparelho. Espere ela ser enviada ao servidor para editar ou excluir.", "OK");
+            if (analysis.IsPendingSync)
+                await Shell.Current.DisplayAlert("Análise ainda não enviada",
+                    "Esta coleta ainda está salva só no aparelho. Espere ela ser enviada ao servidor para editar ou excluir.", "OK");
+            else
+                await Shell.Current.DisplayAlert("Histórico desatualizado",
+                    "Abra o histórico de novo com internet para atualizar e tente outra vez.", "OK");
             return false;
         }
 
@@ -259,6 +264,8 @@ namespace AquaMap.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao abrir edição da análise: {ex}");
+                try { await Shell.Current.DisplayAlert("Erro", "Não foi possível abrir a edição da análise. Tente de novo.", "OK"); }
+                catch (Exception alertEx) { System.Diagnostics.Debug.WriteLine($"Falha ao exibir alerta: {alertEx.Message}"); }
             }
             finally
             {

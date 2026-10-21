@@ -243,16 +243,20 @@ app.MapPut("/water-analysis/{id}", async (AppDbContext db, ILogger<Program> logg
     var analysis = await db.WaterAnalyses.FirstOrDefaultAsync(w => w.Id == id);
     if (analysis is null) return Results.NotFound();
 
-    var physicalError = WaterAnalysisInput.GetPhysicalLimitError(request.ResidualChlorine, request.Ph, request.Turbidity, request.Iron);
+    // Campo ausente não pode virar 0/false: sem E. coli gravaria "presente", sem ferro esconderia um alerta.
+    if (request is not { ResidualChlorine: double chlorine, Ph: double ph, Turbidity: double turbidity, Iron: double iron, EColiAbsent: bool eColiAbsent })
+        return Results.BadRequest(new { error = "Informe todas as leituras: cloro, pH, turbidez, ferro e E. coli." });
+
+    var physicalError = WaterAnalysisInput.GetPhysicalLimitError(chlorine, ph, turbidity, iron);
     if (physicalError != null) return Results.BadRequest(new { error = physicalError });
 
     // Os valores antigos vão para o log: é o único registro do que foi corrigido.
     var previous = new { analysis.ResidualChlorine, analysis.Ph, analysis.Turbidity, analysis.Iron, analysis.EColiAbsent };
-    analysis.ResidualChlorine = request.ResidualChlorine;
-    analysis.Ph = request.Ph;
-    analysis.Turbidity = request.Turbidity;
-    analysis.Iron = request.Iron;
-    analysis.EColiAbsent = request.EColiAbsent;
+    analysis.ResidualChlorine = chlorine;
+    analysis.Ph = ph;
+    analysis.Turbidity = turbidity;
+    analysis.Iron = iron;
+    analysis.EColiAbsent = eColiAbsent;
     await db.SaveChangesAsync();
 
     logger.LogWarning("Análise {AnalysisId} do reservatório {ReservoirId} editada pelo usuário {UserId}. Antes: {Previous}. Depois: {Current}.",
@@ -427,6 +431,6 @@ static class AuthPolicies
 
 public record LoginRequest(string TaxId, string Password);
 public record ReservoirRequest(string Name, double Latitude, double Longitude, List<string>? NeighborhoodNames = null);
-public record WaterAnalysisUpdateRequest(double ResidualChlorine, double Ph, double Turbidity, double Iron, bool EColiAbsent);
+public record WaterAnalysisUpdateRequest(double? ResidualChlorine, double? Ph, double? Turbidity, double? Iron, bool? EColiAbsent);
 public record CreateUserRequest(string FullName, string TaxId, DateTime BirthDate, string Address, string PhoneNumber, string Email, string Password, UserType Role);
 
