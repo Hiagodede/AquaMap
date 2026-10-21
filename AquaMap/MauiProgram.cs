@@ -86,6 +86,8 @@ namespace AquaMap
             builder.Services.AddTransient<ReservoirFormPage>();
             builder.Services.AddTransient<ReservoirDetailViewModel>();
             builder.Services.AddTransient<ReservoirDetailPage>();
+            builder.Services.AddTransient<AnalysisFormViewModel>();
+            builder.Services.AddTransient<AnalysisFormPage>();
             builder.Services.AddTransient<UserListViewModel>();
             builder.Services.AddTransient<UserListPage>();
             builder.Services.AddTransient<UserFormViewModel>();
